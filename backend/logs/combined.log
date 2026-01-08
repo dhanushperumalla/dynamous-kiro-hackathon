@@ -4908,3 +4908,6 @@
 {"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mFetching active questionnaire\u001b[39m","timestamp":"2026-01-08 19:54:47:5447"}
 {"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mQuestionnaire retrieved successfully\u001b[39m","questionCount":15,"timestamp":"2026-01-08 19:54:47:5447","version":"1.1.0"}
 {"level":"\u001b[35mhttp\u001b[39m","message":"\u001b[35m::1 - - [08/Jan/2026:14:24:47 +0000] \"GET /api/assessment/questionnaire HTTP/1.1\" 304 - \"http://localhost:5173/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36\"\u001b[39m","timestamp":"2026-01-08 19:54:47:5447"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mEmail service running in development mode - emails will be logged instead of sent\u001b[39m","timestamp":"2026-01-08 19:55:17:5517"}
+{"database":"ai-sikshak","level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mSuccessfully connected to MongoDB\u001b[39m","timestamp":"2026-01-08 19:55:19:5519","url":"mongodb://localhost:27017/ai-sikshak"}
+{"environment":"development","level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mAI-Sikshak API Server started\u001b[39m","nodeVersion":"v22.14.0","port":"3000","timestamp":"2026-01-08 19:55:19:5519"}
