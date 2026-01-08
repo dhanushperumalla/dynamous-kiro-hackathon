@@ -1,3 +1,7 @@
+// Load environment variables FIRST
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -7,10 +11,7 @@ import { connectDatabase } from '@/config/database';
 import { logger, morganStream } from '@/utils/logger';
 import authRoutes from '@/routes/auth';
 import userRoutes from '@/routes/user';
-
-// Load environment variables
-import dotenv from 'dotenv';
-dotenv.config();
+import assessmentRoutes from '@/routes/assessmentRoutes';
 
 // Create Express application
 const app = express();
@@ -130,6 +131,7 @@ app.get('/health', (_req, res) => {
 // API routes
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/user', userRoutes);
+app.use('/api/assessment', assessmentRoutes);
 
 // API documentation endpoint
 app.get('/api', (_req, res) => {
@@ -140,7 +142,8 @@ app.get('/api', (_req, res) => {
     documentation: '/api/docs',
     endpoints: {
       auth: '/api/auth',
-      user: '/api/user'
+      user: '/api/user',
+      assessment: '/api/assessment'
     },
     timestamp: new Date().toISOString()
   });

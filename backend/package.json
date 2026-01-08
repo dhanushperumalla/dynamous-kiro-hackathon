@@ -7,6 +7,9 @@
     "start": "node dist/app.js",
     "dev": "nodemon src/app.ts",
     "build": "tsc",
+    "seed": "tsx src/scripts/seedDatabase.ts",
+    "debug-user": "tsx src/scripts/debugUser.ts",
+    "check-db": "tsx src/scripts/checkDatabase.ts",
     "test": "jest",
     "test:unit": "jest --testPathPattern=tests/unit",
     "test:integration": "jest --testPathPattern=tests/integration",
@@ -102,6 +105,9 @@
         "lines": 85,
         "statements": 85
       }
+    },
+    "moduleNameMapper": {
+      "^@/(.*)$": "<rootDir>/src/$1"
     }
   },
   "lint-staged": {

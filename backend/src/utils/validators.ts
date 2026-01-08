@@ -389,3 +389,104 @@ export const sanitizeInput = (input: string): string => {
 export const validateObjectId = (id: string): boolean => {
   return /^[0-9a-fA-F]{24}$/.test(id);
 };
+
+// Assessment validation schemas
+export const assessmentValidationSchemas = {
+  // Question response validation
+  questionResponse: Joi.object({
+    questionId: Joi.string()
+      .required()
+      .messages({
+        'any.required': 'Question ID is required'
+      }),
+    answer: Joi.alternatives()
+      .try(
+        Joi.string().max(1000),
+        Joi.number(),
+        Joi.boolean(),
+        Joi.array().items(Joi.string().max(200))
+      )
+      .required()
+      .messages({
+        'any.required': 'Answer is required',
+        'string.max': 'Text answer cannot exceed 1000 characters',
+        'array.max': 'Array answers cannot have more than 10 items'
+      }),
+    responseTime: Joi.number()
+      .integer()
+      .min(0)
+      .max(300000)
+      .required()
+      .messages({
+        'number.min': 'Response time cannot be negative',
+        'number.max': 'Response time cannot exceed 5 minutes',
+        'any.required': 'Response time is required'
+      }),
+    confidence: Joi.number()
+      .integer()
+      .min(1)
+      .max(5)
+      .optional()
+      .messages({
+        'number.min': 'Confidence must be at least 1',
+        'number.max': 'Confidence cannot exceed 5'
+      })
+  }),
+
+  // Submit responses validation
+  submitResponses: Joi.object({
+    responses: Joi.array()
+      .items(Joi.object({
+        questionId: Joi.string().required(),
+        answer: Joi.alternatives().try(
+          Joi.string().max(1000),
+          Joi.number(),
+          Joi.boolean(),
+          Joi.array().items(Joi.string().max(200))
+        ).required(),
+        responseTime: Joi.number().integer().min(0).max(300000).required(),
+        confidence: Joi.number().integer().min(1).max(5).optional()
+      }))
+      .min(1)
+      .max(100)
+      .required()
+      .messages({
+        'array.min': 'At least one response is required',
+        'array.max': 'Cannot submit more than 100 responses at once',
+        'any.required': 'Responses array is required'
+      }),
+    isPartial: Joi.boolean()
+      .optional()
+      .default(false)
+  }),
+
+  // Retake assessment validation
+  retakeAssessment: Joi.object({
+    reason: Joi.string()
+      .max(500)
+      .optional()
+      .messages({
+        'string.max': 'Reason cannot exceed 500 characters'
+      }),
+    keepPreviousData: Joi.boolean()
+      .optional()
+      .default(false)
+  }),
+
+  // Assessment creation validation
+  createAssessment: Joi.object({
+    userId: Joi.string()
+      .pattern(/^[0-9a-fA-F]{24}$/)
+      .required()
+      .messages({
+        'string.pattern.base': 'User ID must be a valid ObjectId',
+        'any.required': 'User ID is required'
+      }),
+    version: Joi.string()
+      .pattern(/^\d+\.\d+\.\d+$/)
+      .optional()
+      .messages({
+        'string.pattern.base': 'Version must follow semantic versioning (e.g., 1.0.0)'
+      })
+  })
+};

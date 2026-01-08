@@ -40,7 +40,11 @@ class EmailService {
       logger.info('SendGrid email service initialized');
     } else {
       this.isEnabled = false;
-      logger.warn('SendGrid API key not found. Email service disabled.');
+      if (isDevelopment) {
+        logger.info('SendGrid API key not configured. Email service disabled for development.');
+      } else {
+        logger.warn('SendGrid API key not found. Email service disabled.');
+      }
     }
   }
 
