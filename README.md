@@ -1,184 +1,253 @@
-# Dynamous Kiro Hackathon Quickstart Template
+# AI-Sikshak - AI-Powered Career Mentorship Platform
 
-🚀 **Your starting point for the Dynamous and Kiro Hackathon** - A comprehensive template with pre-configured Kiro CLI setup, development workflows, and submission guidelines.
+A comprehensive platform that helps confused students and graduates find their career direction through AI-powered recommendations, personalized learning roadmaps, and direct job placement assistance.
 
-> **📖 New to Kiro?** Check out [kiro-guide.md](kiro-guide.md) to quickly get accustomed to how Kiro works and understand its unique features for the hackathon.
+## 🚀 Quick Start
 
-## About the Hackathon
+### Prerequisites
+- Node.js 18+ and npm 9+
+- MongoDB (local installation or MongoDB Atlas)
 
-The **Kiro Hackathon** is a coding competition where developers build real-world applications using the Kiro CLI. Show off your AI-powered development skills and compete for **$17,000 in prizes**.
+### Installation & Setup
 
-- **📅 Dates**: January 5-23, 2026
-- **💰 Prize Pool**: $17,000 across 10 winners
-- **🎯 Theme**: Open - build anything that solves a real problem
-- **🔗 More Info**: [dynamous.ai/kiro-hackathon](https://dynamous.ai/kiro-hackathon)
-
-## What's Included
-
-This template provides everything you need to get started:
-
-- **📋 Steering Documents**: Pre-configured project templates (product.md, tech.md, structure.md)
-- **⚡ Custom Prompts**: 11 powerful development workflow prompts
-- **📖 Examples**: Sample README and DEVLOG showing best practices
-- **🏆 Hackathon Tools**: Specialized code review prompt for submission evaluation
-
-## Quick Start
-
-### 1. Clone This Template
+1. **Clone and install dependencies:**
 ```bash
-git clone https://github.com/coleam00/dynamous-kiro-hackathon
-cd dynamous-kiro-hackathon
+git clone <repository-url>
+cd ai-sikshak
+npm run install:all
 ```
 
-### 2. Run the Setup Wizard
+2. **Start MongoDB:**
 ```bash
-@quickstart
+# If using local MongoDB
+mongod
+
+# Or use MongoDB Atlas connection string in .env files
 ```
 
-This assumes you already have Kiro CLI installed and that you started with the `kiro-cli` command in your terminal.
+3. **Run the application:**
+```bash
+# Start both backend and frontend in development mode
+npm run dev
+```
 
-This interactive wizard will:
-- ✅ Fill out your steering documents with project details
-- ✅ Configure your development workflow
-- ✅ Set up Kiro CLI for your specific project
-- ✅ Explain all available prompts and features
+This will start:
+- Backend API server on `http://localhost:3000`
+- Frontend React app on `http://localhost:5173`
 
-### 3. Start Building
-Your project is now configured! Use these core prompts:
-- **`@prime`** - Load project context
-- **`@plan-feature`** - Plan new features
-- **`@execute`** - Implement plans systematically
-- **`@code-review`** - Review code quality
+### 🎯 Test the Authentication System
 
-**Note:** Your typical workflow will be `@prime` → `@plan-feature` → `@execute` → `@code-review`, but feel free to change it however you want. These commands may require additional details (like what feature to plan or which plan file to execute), but Kiro will ask for these parameters after you invoke the command.
+1. **Open your browser** and go to `http://localhost:5173`
 
-## Development Workflow (Customize this However You Want!)
+2. **Register a new account:**
+   - Click "Sign up here" 
+   - Fill in the registration form
+   - Accept terms and conditions
+   - Click "Create Account"
 
-### Initial Setup (One-Time)
-1. **Complete setup**: Run `@quickstart` to configure your project
+3. **Login with your credentials:**
+   - Use the email and password you just created
+   - Click "Sign In"
 
-### Core Development Cycle (Every Feature/Session)
+4. **Access the dashboard:**
+   - You'll be redirected to a simple dashboard
+   - Your authentication is working! 🎉
 
-### Phase 1: Setup & Planning
-1. **Load context**: Use `@prime` to understand your codebase
-2. **Plan features**: Use `@plan-feature` for comprehensive planning
+## 🔧 Development Configuration
 
-### Phase 2: Build & Iterate
-1. **Implement**: Use `@execute` to build features systematically
-2. **Review**: Use `@code-review` to maintain code quality
-3. **Document**: Update your DEVLOG.md as you work
-4. **Optimize**: Customize your `.kiro/` configuration for your workflow
+The application is pre-configured with dummy credentials for development:
 
-### Phase 3: Submission Preparation
-1. **Final review**: Run `@code-review-hackathon` for submission evaluation
-2. **Polish documentation**: Ensure README.md and DEVLOG.md are complete
-3. **Verify requirements**: Check all submission criteria are met
+### Backend (.env)
+- **Database**: `mongodb://localhost:27017/ai-sikshak-dev`
+- **JWT Secrets**: Dummy development secrets
+- **Email Service**: Development mode (emails logged, not sent)
+- **OAuth**: Dummy Google OAuth credentials
 
-## Submission Requirements
+### Frontend (.env)
+- **API URL**: `http://localhost:3000/api`
+- **Features**: All authentication features enabled
 
-Your submission will be judged on these criteria (100 points total):
+## 📁 Project Structure
 
-### Application Quality (40 points)
-- **Functionality & Completeness** (15 pts): Does it work as intended?
-- **Real-World Value** (15 pts): Does it solve a genuine problem?
-- **Code Quality** (10 pts): Is the code well-structured and maintainable?
+```
+ai-sikshak/
+├── backend/                 # Node.js API server
+│   ├── src/
+│   │   ├── controllers/     # Route handlers
+│   │   ├── models/          # Database models
+│   │   ├── routes/          # API routes
+│   │   ├── middleware/      # Authentication & validation
+│   │   ├── services/        # Business logic
+│   │   ├── utils/           # Helper functions
+│   │   └── types/           # TypeScript types
+│   └── .env                 # Backend environment variables
+├── frontend/                # React application
+│   ├── src/
+│   │   ├── components/      # React components
+│   │   ├── pages/           # Page components
+│   │   ├── hooks/           # Custom hooks
+│   │   ├── services/        # API clients
+│   │   ├── store/           # Redux store
+│   │   ├── utils/           # Utilities
+│   │   └── types/           # TypeScript types
+│   └── .env                 # Frontend environment variables
+└── package.json             # Root package with dev scripts
+```
 
-### Kiro CLI Usage (20 points)
-- **Effective Use of Features** (10 pts): How well did you leverage Kiro CLI?
-- **Custom Commands Quality** (7 pts): Quality of your custom prompts
-- **Workflow Innovation** (3 pts): Creative use of Kiro CLI features
+## 🔐 Authentication Features
 
-### Documentation (20 points)
-- **Completeness** (9 pts): All required documentation present
-- **Clarity** (7 pts): Easy to understand and follow
-- **Process Transparency** (4 pts): Clear development process documentation
+### ✅ Implemented Features
+- [x] User registration with validation
+- [x] User login with JWT tokens
+- [x] Password strength validation
+- [x] Automatic token refresh
+- [x] Protected routes
+- [x] Role-based access control
+- [x] Profile management
+- [x] Email verification flow (development mode)
+- [x] Password reset flow (development mode)
+- [x] OAuth integration setup (Google)
+- [x] Responsive UI design
+- [x] Error handling & validation
 
-### Innovation (15 points)
-- **Uniqueness** (8 pts): Original approach or solution
-- **Creative Problem-Solving** (7 pts): Novel technical solutions
+### 🔒 Security Features
+- bcrypt password hashing (12 salt rounds)
+- JWT access tokens (15min expiry) + refresh tokens (7 days)
+- Rate limiting on authentication endpoints
+- CORS configuration
+- Security headers (Helmet.js)
+- Input validation and sanitization
+- XSS and injection protection
 
-### Presentation (5 points)
-- **Demo Video** (3 pts): Clear demonstration of your project
-- **README** (2 pts): Professional project overview
+## 🛠 Available Scripts
 
-## Required Documentation
+### Root Level
+```bash
+npm run dev              # Start both backend and frontend
+npm run build            # Build both applications
+npm run install:all      # Install all dependencies
+```
 
-Ensure these files are complete and high-quality:
+### Backend Only
+```bash
+cd backend
+npm run dev              # Start backend in development mode
+npm run build            # Build backend
+npm start                # Start built backend
+npm run test             # Run tests (when implemented)
+```
 
-### README.md
-- Clear project description and value proposition
-- Prerequisites and setup instructions
-- Architecture overview and key components
-- Usage examples and troubleshooting
+### Frontend Only
+```bash
+cd frontend
+npm run dev              # Start frontend development server
+npm run build            # Build frontend for production
+npm run preview          # Preview built frontend
+```
 
-*There's a lot of freedom for how you can structure this. Just make sure that it's easy for someone viewing this to know exactly what your project is about and how to run it themselves. This is the main criteria that explains the project clearly and how to test it in a local environment.*
+## 🧪 Testing the System
 
-### DEVLOG.md
-- Development timeline with key milestones
-- Technical decisions and rationale
-- Challenges faced and solutions implemented
-- Time tracking and Kiro CLI usage statistics
+### Manual Testing Checklist
+- [ ] User can register with valid email/password
+- [ ] User receives appropriate validation errors for invalid input
+- [ ] User can login with correct credentials
+- [ ] User cannot login with incorrect credentials
+- [ ] User is redirected to dashboard after successful login
+- [ ] User can access protected routes when authenticated
+- [ ] User is redirected to login when accessing protected routes without auth
+- [ ] User can logout and lose access to protected routes
+- [ ] Password strength indicator works during registration
+- [ ] Form validation works on both login and signup forms
 
-*There's a lot of freedom in how you structure this too. It's up to you how you want to document your timeline, milestones, decisions made, challenges you encounter, and all those kinds of things. Feel free to use Kiro to help you maintain your devlog as you're working on the project. Hint: create a Kiro prompt to help you update your log based on what's happening.*
+### API Testing
+You can test the API endpoints directly:
 
-### .kiro/ Directory
-- **Steering documents**: Customized for your project
-- **Custom prompts**: Workflow-specific commands
-- **Configuration**: Optimized for your development process
+```bash
+# Register a new user
+curl -X POST http://localhost:3000/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "test@example.com",
+    "password": "SecurePass123!",
+    "firstName": "Test",
+    "lastName": "User"
+  }'
 
-*This template provides a good starting point with prompts, and the wizard helps you set up your initial steering documents. However, it's encouraged for you to continue to customize things and refine it as you're working on your project.*
+# Login
+curl -X POST http://localhost:3000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "test@example.com",
+    "password": "SecurePass123!"
+  }'
 
-## Available Prompts
+# Access protected route (use token from login response)
+curl -X GET http://localhost:3000/api/user/profile \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
 
-This template includes 11 powerful development prompts:
+## 🔄 Next Steps
 
-### Core Development
-- **`@prime`** - Load comprehensive project context
-- **`@plan-feature`** - Create detailed implementation plans
-- **`@execute`** - Execute plans with systematic task management
-- **`@quickstart`** - Interactive project setup wizard
+This authentication system provides the foundation for the full AI-Sikshak platform. Next implementations would include:
 
-### Quality Assurance
-- **`@code-review`** - Technical code review for quality and bugs
-- **`@code-review-hackathon`** - Hackathon submission evaluation
-- **`@code-review-fix`** - Fix issues found in code reviews
-- **`@system-review`** - Analyze implementation vs plan
+1. **Interest Assessment Module**
+2. **AI Recommendation Engine**
+3. **Learning Roadmap System**
+4. **Progress Tracking**
+5. **Job Integration Service**
+6. **Notification System**
 
-### Documentation & Planning
-- **`@create-prd`** - Generate Product Requirements Documents
-- **`@execution-report`** - Generate implementation reports
-- **`@rca`** - Root cause analysis for issues
-- **`@implement-fix`** - Implement fixes based on analysis
+## 🐛 Troubleshooting
 
-## Examples
+### Common Issues
 
-Check the `examples/` folder for:
-- **README.md**: Professional project documentation example
-- **DEVLOG.md**: Comprehensive development log example
+**MongoDB Connection Error:**
+- Ensure MongoDB is running locally or check your connection string
+- Verify the database URL in `backend/.env`
 
-These examples show the level of detail and professionalism expected for hackathon submissions.
+**Port Already in Use:**
+- Backend (3000): `lsof -ti:3000 | xargs kill -9`
+- Frontend (5173): `lsof -ti:5173 | xargs kill -9`
 
-## Tips for Success
+**Build Errors:**
+- Clear node_modules: `npm run clean && npm run install:all`
+- Check TypeScript errors: `cd backend && npx tsc --noEmit`
 
-### Maximize Your Score
-1. **Use Kiro CLI extensively** - It's 20% of your score
-2. **Document everything** - Process documentation is 20% of your score
-3. **Build something useful** - Real-world value is heavily weighted
-4. **Optimize your workflow** - Custom prompts and steering documents matter
+**Email Service:**
+- In development mode, emails are logged to console instead of sent
+- Check backend logs for email content
 
-### Development Best Practices
-- **Start with `@quickstart`** to set up your foundation properly
-- **Use `@prime`** at the start of every new conversation to quickly catch the coding assistant up to speed on what has been built in the project already
-- **Update your DEVLOG.md** continuously, not just at the end
-- **Customize your `.kiro/` configuration** as you learn your workflow
-- **Run `@code-review-hackathon`** periodically to compare your project against the judging rubric and before submitting
+## 📝 Environment Variables
 
-## Getting Help
+### Production Setup
+When deploying to production, update these environment variables:
 
-- **Kiro CLI Documentation**: [kiro.dev/docs/cli](https://kiro.dev/docs/cli)
-- **Hackathon Community**: Join the Dynamous community for support
-- **Built-in Help**: Use `/help` in Kiro CLI for command assistance
+**Backend:**
+- `JWT_ACCESS_SECRET` - Strong random secret (32+ characters)
+- `JWT_REFRESH_SECRET` - Different strong random secret
+- `DATABASE_URL` - Production MongoDB connection string
+- `SENDGRID_API_KEY` - Real SendGrid API key
+- `GOOGLE_CLIENT_ID` - Real Google OAuth client ID
+- `GOOGLE_CLIENT_SECRET` - Real Google OAuth client secret
+
+**Frontend:**
+- `VITE_API_BASE_URL` - Production API URL
+- `VITE_GOOGLE_CLIENT_ID` - Real Google OAuth client ID
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
+
+## 📄 License
+
+This project is licensed under the MIT License.
 
 ---
 
-**Ready to build something amazing?** Run `@quickstart` and let's get started! 🚀
+**Happy coding! 🚀**
+
+The authentication system is fully functional and ready for development. Start building the next features of your AI-powered career mentorship platform!
