@@ -16,26 +16,81 @@ export const Dashboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    console.log('Dashboard: Loading assessment data on mount');
     loadAssessmentData();
   }, []);
 
   const loadAssessmentData = async () => {
     try {
+      console.log('Dashboard: Starting to load assessment data');
       setLoading(true);
       setError(null);
       
-      // Try to get current assessment progress
-      const progressData = await assessmentService.getProgress();
-      setAssessment(progressData.assessment as Assessment);
+      // Try to get current assessment progress first
+      try {
+        console.log('Dashboard: Fetching assessment progress');
+        const progressData = await assessmentService.getProgress();
+        console.log('Dashboard: Progress data received:', progressData);
+        
+        // If assessment is complete, get the full results instead
+        if (progressData.progress.isComplete) {
+          try {
+            console.log('Dashboard: Assessment complete, fetching results');
+            const resultsData = await assessmentService.getResults();
+            console.log('Dashboard: Results data received:', resultsData);
+            setAssessment(resultsData);
+            return;
+          } catch (resultsError) {
+            console.warn('Dashboard: Failed to get results, using progress data:', resultsError);
+            // Fall through to use progress data
+          }
+        }
+        
+        // For incomplete assessments or if results failed, use progress data
+        const fullAssessment: Assessment = {
+          ...progressData.assessment,
+          progress: progressData.progress,
+          isComplete: progressData.progress.isComplete,
+          interestProfile: undefined,
+          totalCompletionTime: undefined
+        };
+        
+        console.log('Dashboard: Setting assessment from progress data:', fullAssessment);
+        setAssessment(fullAssessment);
+      } catch (progressError: any) {
+        console.log('Dashboard: Progress fetch failed:', progressError);
+        // If progress fails, try to get results directly (in case assessment is complete)
+        if (progressError.response?.status === 404) {
+          try {
+            console.log('Dashboard: Trying to fetch results directly');
+            const resultsData = await assessmentService.getResults();
+            console.log('Dashboard: Results data received directly:', resultsData);
+            setAssessment(resultsData);
+            return;
+          } catch (resultsError) {
+            console.log('Dashboard: Both progress and results failed, no assessment exists');
+            // Both progress and results failed, no assessment exists
+            setAssessment(null);
+            return;
+          }
+        }
+        throw progressError; // Re-throw other errors
+      }
     } catch (err: any) {
-      // If no assessment exists, that's okay - user hasn't started yet
-      if (err.response?.status === 404) {
+      console.error('Dashboard: Error loading assessment data:', err);
+      // Handle authentication and other errors
+      if (err.response?.status === 401) {
+        setError('Your session has expired. Please log in again.');
+      } else if (err.response?.status === 404) {
+        // No assessment exists - this is normal for new users
+        console.log('Dashboard: No assessment found (404), setting to null');
         setAssessment(null);
       } else {
-        console.error('Error loading assessment data:', err);
+        console.error('Dashboard: Unexpected error:', err);
         setError('Failed to load assessment data');
       }
     } finally {
+      console.log('Dashboard: Assessment loading completed');
       setLoading(false);
     }
   };
@@ -95,12 +150,22 @@ export const Dashboard: React.FC = () => {
             </svg>
             <span className="text-sm font-medium text-red-800">{error}</span>
           </div>
-          <button
-            onClick={loadAssessmentData}
-            className="mt-2 text-sm text-red-600 hover:text-red-500 font-medium"
-          >
-            Try again
-          </button>
+          <div className="mt-2 flex space-x-3">
+            <button
+              onClick={loadAssessmentData}
+              className="text-sm text-red-600 hover:text-red-500 font-medium"
+            >
+              Try again
+            </button>
+            {error.includes('session has expired') && (
+              <button
+                onClick={logout}
+                className="text-sm text-red-600 hover:text-red-500 font-medium"
+              >
+                Log in again
+              </button>
+            )}
+          </div>
         </div>
       );
     }
@@ -187,7 +252,13 @@ export const Dashboard: React.FC = () => {
                 <p className="text-gray-600 text-sm mb-4">
                   Monitor your learning progress and achievements.
                 </p>
-                <button className="text-blue-600 hover:text-blue-500 font-medium text-sm">
+                <button 
+                  onClick={() => {
+                    // For now, show a placeholder message since progress tracking isn't fully implemented
+                    toast('Progress tracking feature is coming soon! Complete your assessment first to unlock learning paths.', { icon: 'ℹ️' });
+                  }}
+                  className="text-blue-600 hover:text-blue-500 font-medium text-sm"
+                >
                   View Progress
                 </button>
               </div>

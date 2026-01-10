@@ -7,11 +7,11 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
-import { connectDatabase } from '@/config/database';
 import { logger, morganStream } from '@/utils/logger';
 import authRoutes from '@/routes/auth';
 import userRoutes from '@/routes/user';
 import assessmentRoutes from '@/routes/assessmentRoutes';
+import recommendationRoutes from '@/routes/recommendationRoutes';
 
 // Create Express application
 const app = express();
@@ -47,6 +47,7 @@ const corsOptions = {
       'http://localhost:3000',
       'http://localhost:3001',
       'http://localhost:5173',
+      'http://localhost:5174', // Add port 5174 for Vite dev server
       process.env['FRONTEND_URL']
     ].filter(Boolean);
     
@@ -132,6 +133,7 @@ app.get('/health', (_req, res) => {
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/assessment', assessmentRoutes);
+app.use('/api/recommendations', recommendationRoutes);
 
 // API documentation endpoint
 app.get('/api', (_req, res) => {
@@ -143,7 +145,8 @@ app.get('/api', (_req, res) => {
     endpoints: {
       auth: '/api/auth',
       user: '/api/user',
-      assessment: '/api/assessment'
+      assessment: '/api/assessment',
+      recommendations: '/api/recommendations'
     },
     timestamp: new Date().toISOString()
   });
@@ -189,69 +192,6 @@ app.use((error: any, req: express.Request, res: express.Response, _next: express
       requestId
     }
   });
-});
-
-// Graceful shutdown handler
-const gracefulShutdown = (signal: string) => {
-  logger.info(`Received ${signal}. Starting graceful shutdown...`);
-  
-  // Close server
-  server.close(() => {
-    logger.info('HTTP server closed');
-    
-    // Close database connection
-    process.exit(0);
-  });
-  
-  // Force close after 30 seconds
-  setTimeout(() => {
-    logger.error('Could not close connections in time, forcefully shutting down');
-    process.exit(1);
-  }, 30000);
-};
-
-// Handle shutdown signals
-process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-
-// Handle uncaught exceptions
-process.on('uncaughtException', (error) => {
-  logger.error('Uncaught Exception', {
-    error: error.message,
-    stack: error.stack
-  });
-  process.exit(1);
-});
-
-// Handle unhandled promise rejections
-process.on('unhandledRejection', (reason, promise) => {
-  logger.error('Unhandled Rejection', {
-    reason,
-    promise
-  });
-  process.exit(1);
-});
-
-// Start server
-const PORT = process.env['PORT'] || 3000;
-const server = app.listen(PORT, async () => {
-  try {
-    // Connect to database
-    await connectDatabase();
-    
-    logger.info('AI-Sikshak API Server started', {
-      port: PORT,
-      environment: process.env['NODE_ENV'] || 'development',
-      nodeVersion: process.version,
-      timestamp: new Date().toISOString()
-    });
-  } catch (error) {
-    logger.error('Failed to start server', {
-      error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined
-    });
-    process.exit(1);
-  }
 });
 
 export default app;

@@ -81,7 +81,7 @@ class AssessmentService {
    */
   async startAssessment(): Promise<Assessment> {
     const response = await apiClient.post('/assessment/start');
-    return response.data.assessment;
+    return response.data.data.assessment;
   }
 
   /**
@@ -96,7 +96,7 @@ class AssessmentService {
     };
   }> {
     const response = await apiClient.post('/assessment/submit', submission);
-    return response.data;
+    return response.data.data;
   }
 
   /**
@@ -104,7 +104,7 @@ class AssessmentService {
    */
   async getResults(): Promise<Assessment> {
     const response = await apiClient.get('/assessment/results');
-    return response.data.assessment;
+    return response.data.data.assessment;
   }
 
   /**
@@ -115,7 +115,7 @@ class AssessmentService {
     assessment: Pick<Assessment, 'id' | 'version' | 'startedAt' | 'completedAt' | 'isComplete'>;
   }> {
     const response = await apiClient.get('/assessment/progress');
-    return response.data;
+    return response.data.data;
   }
 
   /**
@@ -126,7 +126,7 @@ class AssessmentService {
     previousAssessment?: Pick<Assessment, 'id' | 'completedAt' | 'interestProfile'>;
   }> {
     const response = await apiClient.post('/assessment/retake', retakeData || {});
-    return response.data;
+    return response.data.data;
   }
 }
 

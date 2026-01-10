@@ -25,12 +25,26 @@ export const useAuth = () => {
     (state) => state.auth
   );
 
-  // Initialize tokens on mount
+  // Initialize tokens on mount and when they change
   useEffect(() => {
+    console.log('useAuth: Tokens changed:', tokens ? 'present' : 'null');
     if (tokens) {
+      console.log('useAuth: Setting tokens in authApi service');
       setTokens(tokens);
+    } else {
+      console.log('useAuth: Clearing tokens from authApi service');
+      clearTokens();
     }
   }, [tokens]);
+
+  // Initialize user profile on app rehydration
+  useEffect(() => {
+    // If we have tokens but no user (likely app rehydration), get user profile
+    if (tokens?.accessToken && !user && !isLoading && !isTokenExpired(tokens.accessToken)) {
+      console.log('useAuth: App rehydration detected, fetching user profile');
+      refreshUserProfile();
+    }
+  }, [tokens?.accessToken, user, isLoading]);
 
   // Auto-refresh token when it's about to expire
   useEffect(() => {

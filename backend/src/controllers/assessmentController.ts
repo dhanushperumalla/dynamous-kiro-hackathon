@@ -115,14 +115,33 @@ export class AssessmentController {
         return;
       }
       
-      // Check if user already has an incomplete assessment
+      // Check if user already has ANY assessment (complete or incomplete)
       const existingAssessment = await AssessmentResponse.findOne({
-        userId,
-        version: questionnaire.version,
-        isComplete: false
-      });
+        userId
+      }).sort({ createdAt: -1 });
       
       if (existingAssessment) {
+        // If assessment is complete, user should retake instead of starting new
+        if (existingAssessment.isComplete) {
+          res.status(400).json({
+            success: false,
+            message: 'Assessment already completed',
+            error: {
+              code: 'ASSESSMENT_ALREADY_COMPLETED',
+              message: 'You have already completed an assessment. Use retake to start a new one.'
+            },
+            data: {
+              existingAssessment: {
+                id: existingAssessment._id,
+                completedAt: existingAssessment.completedAt,
+                isComplete: existingAssessment.isComplete
+              }
+            }
+          });
+          return;
+        }
+        
+        // If assessment is incomplete, return the existing one
         logger.info('Returning existing incomplete assessment', {
           userId,
           assessmentId: existingAssessment._id
@@ -534,15 +553,19 @@ export class AssessmentController {
       // Get previous assessment if exists
       const previousAssessment = await AssessmentResponse.findOne({
         userId,
-        version: questionnaire.version,
         isComplete: true
       }).sort({ completedAt: -1 });
       
-      // Cancel any incomplete assessments
-      await AssessmentResponse.updateMany(
-        { userId, version: questionnaire.version, isComplete: false },
-        { isComplete: false } // Mark as cancelled (could add a cancelled field)
-      );
+      // Delete ALL previous assessments for this user (both complete and incomplete)
+      // This ensures only one assessment exists per user at any time
+      await AssessmentResponse.deleteMany({
+        userId
+      });
+      
+      logger.info('Previous assessments deleted for retake', {
+        userId,
+        previousAssessmentId: previousAssessment?._id
+      });
       
       // Create new assessment
       const newAssessment = new AssessmentResponse({
@@ -642,10 +665,9 @@ export class AssessmentController {
         return;
       }
       
-      // Get current assessment
+      // Get current assessment (any assessment for this user)
       const assessment = await AssessmentResponse.findOne({
-        userId,
-        version: questionnaire.version
+        userId
       }).sort({ createdAt: -1 });
       
       if (!assessment) {

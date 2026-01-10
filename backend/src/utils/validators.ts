@@ -490,3 +490,176 @@ export const assessmentValidationSchemas = {
       })
   })
 };
+
+// Recommendation validation schemas
+export const recommendationValidationSchemas = {
+  // Generate recommendations validation
+  generateRecommendations: Joi.object({
+    algorithm: Joi.string()
+      .valid('collaborative_filtering', 'content_based', 'hybrid', 'market_weighted')
+      .optional()
+      .default('hybrid')
+      .messages({
+        'any.only': 'Algorithm must be one of: collaborative_filtering, content_based, hybrid, market_weighted'
+      }),
+    maxRecommendations: Joi.number()
+      .integer()
+      .min(1)
+      .max(10)
+      .optional()
+      .default(5)
+      .messages({
+        'number.min': 'Maximum recommendations must be at least 1',
+        'number.max': 'Maximum recommendations cannot exceed 10'
+      }),
+    includeMarketData: Joi.boolean()
+      .optional()
+      .default(true),
+    filterByCategory: Joi.array()
+      .items(Joi.string().valid(
+        'technology', 'business', 'creative', 'healthcare', 'education',
+        'finance', 'marketing', 'design', 'engineering', 'research',
+        'consulting', 'entrepreneurship'
+      ))
+      .optional()
+      .messages({
+        'array.includes': 'Invalid category in filter'
+      })
+  }),
+
+  // Get recommendations validation
+  getRecommendations: Joi.object({
+    includeInactive: Joi.boolean()
+      .optional()
+      .default(false)
+  }),
+
+  // Submit feedback validation
+  submitFeedback: Joi.object({
+    recommendationId: Joi.string()
+      .pattern(/^[0-9a-fA-F]{24}$/)
+      .required()
+      .messages({
+        'string.pattern.base': 'Recommendation ID must be a valid ObjectId',
+        'any.required': 'Recommendation ID is required'
+      }),
+    domainId: Joi.string()
+      .required()
+      .messages({
+        'any.required': 'Domain ID is required'
+      }),
+    rating: Joi.number()
+      .integer()
+      .min(1)
+      .max(5)
+      .required()
+      .messages({
+        'number.min': 'Rating must be at least 1',
+        'number.max': 'Rating cannot exceed 5',
+        'any.required': 'Rating is required'
+      }),
+    feedback: Joi.string()
+      .valid(
+        'very_relevant', 'relevant', 'somewhat_relevant', 'not_relevant',
+        'already_pursuing', 'not_interested'
+      )
+      .required()
+      .messages({
+        'any.only': 'Feedback must be one of: very_relevant, relevant, somewhat_relevant, not_relevant, already_pursuing, not_interested',
+        'any.required': 'Feedback is required'
+      }),
+    comments: Joi.string()
+      .max(1000)
+      .trim()
+      .optional()
+      .messages({
+        'string.max': 'Comments cannot exceed 1000 characters'
+      }),
+    selectedDomain: Joi.string()
+      .optional(),
+    rejectionReason: Joi.string()
+      .max(500)
+      .trim()
+      .optional()
+      .messages({
+        'string.max': 'Rejection reason cannot exceed 500 characters'
+      })
+  }),
+
+  // Get all domains validation
+  getAllDomains: Joi.object({
+    category: Joi.string()
+      .valid(
+        'technology', 'business', 'creative', 'healthcare', 'education',
+        'finance', 'marketing', 'design', 'engineering', 'research',
+        'consulting', 'entrepreneurship'
+      )
+      .optional(),
+    difficulty: Joi.string()
+      .valid('beginner', 'intermediate', 'advanced', 'expert')
+      .optional(),
+    search: Joi.string()
+      .max(100)
+      .trim()
+      .optional()
+      .messages({
+        'string.max': 'Search query cannot exceed 100 characters'
+      }),
+    tags: Joi.alternatives()
+      .try(
+        Joi.string(),
+        Joi.array().items(Joi.string().max(50))
+      )
+      .optional(),
+    minSalary: Joi.number()
+      .integer()
+      .min(0)
+      .optional()
+      .messages({
+        'number.min': 'Minimum salary cannot be negative'
+      }),
+    maxSalary: Joi.number()
+      .integer()
+      .min(0)
+      .optional()
+      .messages({
+        'number.min': 'Maximum salary cannot be negative'
+      }),
+    sortBy: Joi.string()
+      .valid('name', 'demandScore', 'salary', 'growthRate', 'difficulty', 'timeToMastery', 'createdAt')
+      .optional()
+      .default('name'),
+    sortOrder: Joi.string()
+      .valid('asc', 'desc')
+      .optional()
+      .default('asc'),
+    limit: Joi.number()
+      .integer()
+      .min(1)
+      .max(100)
+      .optional()
+      .default(20)
+      .messages({
+        'number.min': 'Limit must be at least 1',
+        'number.max': 'Limit cannot exceed 100'
+      }),
+    offset: Joi.number()
+      .integer()
+      .min(0)
+      .optional()
+      .default(0)
+      .messages({
+        'number.min': 'Offset cannot be negative'
+      })
+  }),
+
+  // Get domain details validation
+  getDomainDetails: Joi.object({
+    includeRelated: Joi.boolean()
+      .optional()
+      .default(true),
+    includeSkillGap: Joi.boolean()
+      .optional()
+      .default(false)
+  })
+};

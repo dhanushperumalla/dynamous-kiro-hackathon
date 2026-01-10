@@ -2,12 +2,15 @@
   "name": "ai-sikshak-backend",
   "version": "1.0.0",
   "description": "AI-Sikshak Backend API - User authentication and career mentorship platform",
-  "main": "dist/app.js",
+  "main": "dist/server.js",
   "scripts": {
-    "start": "node dist/app.js",
-    "dev": "nodemon src/app.ts",
+    "start": "node dist/server.js",
+    "dev": "nodemon src/server.ts",
     "build": "tsc",
     "seed": "tsx src/scripts/seedDatabase.ts",
+    "seed:domains": "tsx src/scripts/seedCareerDomains.ts",
+    "create:indexes": "tsx src/scripts/createIndexes.ts",
+    "test:domains": "tsx src/scripts/testCareerDomainService.ts",
     "debug-user": "tsx src/scripts/debugUser.ts",
     "check-db": "tsx src/scripts/checkDatabase.ts",
     "test": "jest",
@@ -76,6 +79,7 @@
     "ts-jest": "^29.1.1",
     "ts-node": "^10.9.1",
     "tsconfig-paths": "^4.2.0",
+    "tsx": "^4.21.0",
     "typescript": "^5.2.2"
   },
   "engines": {

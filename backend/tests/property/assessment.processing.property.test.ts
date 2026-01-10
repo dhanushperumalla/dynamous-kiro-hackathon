@@ -183,7 +183,7 @@ describe('Assessment Processing Property Tests', () => {
       await fc.assert(
         fc.asyncProperty(
           fc.array(questionArb, { minLength: 10, maxLength: 20 }),
-          fc.float({ min: 0.1, max: 1.0 }),
+          fc.float({ min: Math.fround(0.1), max: Math.fround(1.0) }).filter(ratio => !isNaN(ratio) && isFinite(ratio)),
           async (questions, completionRatio) => {
             // Ensure unique question IDs
             const uniqueQuestions = questions.map((q, index) => ({
@@ -195,9 +195,12 @@ describe('Assessment Processing Property Tests', () => {
             const totalQuestions = uniqueQuestions.length;
             const responseCount = Math.floor(totalQuestions * completionRatio);
             
+            // Ensure we have at least 1 response and don't exceed total questions
+            const validResponseCount = Math.max(1, Math.min(responseCount, totalQuestions));
+            
             // Generate responses for subset of questions
             const responses: IQuestionResponse[] = uniqueQuestions
-              .slice(0, responseCount)
+              .slice(0, validResponseCount)
               .map(q => ({
                 questionId: q.id,
                 answer: 'test answer',
@@ -208,7 +211,13 @@ describe('Assessment Processing Property Tests', () => {
             const profile = await InterestAnalysisService.analyzeResponses(responses, uniqueQuestions);
             
             // Property: Completeness should match actual completion ratio
-            const expectedCompleteness = Math.round((responseCount / totalQuestions) * 100);
+            const expectedCompleteness = Math.round((validResponseCount / totalQuestions) * 100);
+            
+            // Ensure both values are valid numbers
+            expect(typeof profile.completeness).toBe('number');
+            expect(isFinite(profile.completeness)).toBe(true);
+            expect(isFinite(expectedCompleteness)).toBe(true);
+            
             expect(Math.abs(profile.completeness - expectedCompleteness)).toBeLessThanOrEqual(1);
           }
         ),

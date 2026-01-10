@@ -79,7 +79,7 @@ export const AssessmentCard: React.FC<AssessmentCardProps> = ({
         <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
           <div className="text-sm text-green-800">
             <p><strong>Completed:</strong> {new Date(assessment.completedAt!).toLocaleDateString()}</p>
-            <p><strong>Total Questions:</strong> {assessment.progress.totalQuestions}</p>
+            <p><strong>Total Questions:</strong> {assessment.progress?.totalQuestions || 'N/A'}</p>
             {assessment.totalCompletionTime && (
               <p><strong>Time Taken:</strong> {Math.round(assessment.totalCompletionTime / 60000)} minutes</p>
             )}
@@ -104,7 +104,7 @@ export const AssessmentCard: React.FC<AssessmentCardProps> = ({
   }
 
   // Assessment in progress
-  const progressPercentage = assessment.progress.completionPercentage;
+  const progressPercentage = assessment.progress?.completionPercentage || 0;
   
   return (
     <div className="text-center">
@@ -143,7 +143,7 @@ export const AssessmentCard: React.FC<AssessmentCardProps> = ({
           ></div>
         </div>
         <div className="text-sm text-gray-500 mt-2">
-          {assessment.progress.answeredQuestions} of {assessment.progress.totalQuestions} questions completed
+          {assessment.progress?.answeredQuestions || 0} of {assessment.progress?.totalQuestions || 0} questions completed
         </div>
       </div>
 

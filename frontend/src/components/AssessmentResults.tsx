@@ -1,5 +1,11 @@
-import React from 'react';
-import { Assessment } from '@/services/assessmentService';
+import React, { useState, useEffect } from 'react';
+import { Assessment, assessmentService } from '@/services/assessmentService';
+import { DomainRecommendations } from '@/components/DomainRecommendations';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { generateRecommendations } from '@/store/slices/recommendationSlice';
+import { RecommendedDomain } from '@/types/recommendations';
+import { useAuth } from '@/hooks/useAuth';
+import toast from 'react-hot-toast';
 
 interface AssessmentResultsProps {
   assessment: Assessment | null;
@@ -12,13 +18,116 @@ export const AssessmentResults: React.FC<AssessmentResultsProps> = ({
   onRetake,
   onBack
 }) => {
-  if (!assessment || !assessment.isComplete || !assessment.interestProfile) {
+  const dispatch = useAppDispatch();
+  const { user } = useAuth();
+  const { currentRecommendation, isLoading: recommendationsLoading } = useAppSelector(state => state.recommendations);
+  const [showRecommendations, setShowRecommendations] = useState(false);
+  const [recommendationsGenerated, setRecommendationsGenerated] = useState(false);
+
+  useEffect(() => {
+    // Auto-generate recommendations when assessment is complete
+    if (assessment?.isComplete && assessment.interestProfile && !recommendationsGenerated && user?.id) {
+      generateDomainRecommendations();
+    }
+  }, [assessment, recommendationsGenerated, user]);
+
+  const generateDomainRecommendations = async () => {
+    if (!assessment?.interestProfile || !user?.id) return;
+
+    try {
+      await dispatch(generateRecommendations({
+        userId: user.id,
+        interestProfile: assessment.interestProfile,
+        algorithm: 'hybrid',
+        maxRecommendations: 5
+      }));
+      setRecommendationsGenerated(true);
+      toast.success('Domain recommendations generated successfully!');
+    } catch (error) {
+      console.error('Error generating recommendations:', error);
+      toast.error('Failed to generate recommendations. Please try again.');
+    }
+  };
+
+  const handleViewRecommendations = () => {
+    if (currentRecommendation) {
+      setShowRecommendations(true);
+    } else {
+      generateDomainRecommendations();
+    }
+  };
+
+  const handleDomainSelected = (domain: RecommendedDomain) => {
+    toast.success(`Great choice! ${domain.domain.title} selected.`);
+    // Here you would typically navigate to the learning roadmap
+    // For now, we'll show a message
+    toast('Learning roadmap feature is coming soon!', { icon: 'ℹ️' });
+  };
+
+  // Show recommendations view if user clicked to view them
+  if (showRecommendations) {
+    return (
+      <DomainRecommendations
+        onDomainSelected={handleDomainSelected}
+        onBack={() => setShowRecommendations(false)}
+      />
+    );
+  }
+
+  if (!assessment) {
     return (
       <div className="text-center">
-        <p className="text-gray-600">No assessment results available</p>
+        <p className="text-gray-600">No assessment data available</p>
         <button onClick={onBack} className="mt-4 text-blue-600 hover:text-blue-500">
           Go Back
         </button>
+      </div>
+    );
+  }
+
+  if (!assessment.isComplete) {
+    return (
+      <div className="text-center">
+        <p className="text-gray-600">Assessment is not yet complete</p>
+        <p className="text-sm text-gray-500 mt-2">
+          Progress: {assessment.progress?.completionPercentage || 0}%
+        </p>
+        <button onClick={onBack} className="mt-4 text-blue-600 hover:text-blue-500">
+          Go Back
+        </button>
+      </div>
+    );
+  }
+
+  if (!assessment.interestProfile) {
+    return (
+      <div className="text-center">
+        <p className="text-gray-600">Assessment results are being processed...</p>
+        <p className="text-sm text-gray-500 mt-2">
+          Your interest profile is being generated. Please wait a moment.
+        </p>
+        <div className="flex items-center justify-center mt-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </div>
+        <div className="mt-4 space-x-4">
+          <button 
+            onClick={async () => {
+              try {
+                await assessmentService.getResults();
+                // Update the assessment in the parent component
+                window.location.reload(); // Temporary solution to refresh the data
+              } catch (error) {
+                toast.error('Failed to fetch results. Please try again.');
+              }
+            }}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
+          >
+            Refresh Results
+          </button>
+          <button onClick={onBack} className="text-blue-600 hover:text-blue-500 text-sm font-medium">
+            Go Back
+          </button>
+        </div>
       </div>
     );
   }
@@ -221,13 +330,29 @@ export const AssessmentResults: React.FC<AssessmentResultsProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="bg-white rounded-lg p-4">
             <h3 className="font-semibold text-gray-900 mb-2">
-              Explore Learning Paths
+              Get Domain Recommendations
             </h3>
             <p className="text-gray-600 text-sm mb-3">
-              Get personalized learning roadmaps based on your top interests.
+              Discover career domains that match your interests and get personalized recommendations.
             </p>
-            <button className="text-blue-600 hover:text-blue-500 font-medium text-sm">
-              View Recommendations →
+            <button 
+              onClick={handleViewRecommendations}
+              disabled={recommendationsLoading}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {recommendationsLoading ? (
+                <span className="flex items-center">
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Generating...
+                </span>
+              ) : currentRecommendation ? (
+                'View Recommendations →'
+              ) : (
+                'Get Recommendations →'
+              )}
             </button>
           </div>
           
@@ -238,7 +363,10 @@ export const AssessmentResults: React.FC<AssessmentResultsProps> = ({
             <p className="text-gray-600 text-sm mb-3">
               Discover job opportunities that align with your interests.
             </p>
-            <button className="text-blue-600 hover:text-blue-500 font-medium text-sm">
+            <button 
+              onClick={() => toast('Job matching feature is coming soon! Complete your domain selection first.', { icon: 'ℹ️' })}
+              className="text-blue-600 hover:text-blue-500 font-medium text-sm"
+            >
               Browse Jobs →
             </button>
           </div>
