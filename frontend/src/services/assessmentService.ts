@@ -96,14 +96,39 @@ class AssessmentService {
     };
   }> {
     const response = await apiClient.post('/assessment/submit', submission);
-    return response.data.data;
+    
+    // Log the response structure for debugging
+    console.log('submitResponses: API response structure:', {
+      success: response.data.success,
+      hasData: !!response.data.data,
+      hasAssessment: !!response.data.data?.assessment,
+      hasValidation: !!response.data.data?.validation,
+      assessmentComplete: response.data.data?.assessment?.isComplete,
+      hasInterestProfile: !!response.data.data?.assessment?.interestProfile
+    });
+    
+    return {
+      assessment: response.data.data.assessment,
+      validation: response.data.data.validation
+    };
   }
 
   /**
    * Get assessment results
    */
   async getResults(): Promise<Assessment> {
-    const response = await apiClient.get('/assessment/results');
+    // Add timestamp to prevent caching
+    const timestamp = Date.now();
+    const response = await apiClient.get(`/assessment/results?_t=${timestamp}`);
+    
+    console.log('getResults: API response:', {
+      success: response.data.success,
+      hasData: !!response.data.data,
+      hasAssessment: !!response.data.data?.assessment,
+      assessmentComplete: response.data.data?.assessment?.isComplete,
+      hasInterestProfile: !!response.data.data?.assessment?.interestProfile
+    });
+    
     return response.data.data.assessment;
   }
 
@@ -114,7 +139,19 @@ class AssessmentService {
     progress: Assessment['progress'];
     assessment: Pick<Assessment, 'id' | 'version' | 'startedAt' | 'completedAt' | 'isComplete'>;
   }> {
-    const response = await apiClient.get('/assessment/progress');
+    // Add timestamp to prevent caching
+    const timestamp = Date.now();
+    const response = await apiClient.get(`/assessment/progress?_t=${timestamp}`);
+    
+    console.log('getProgress: API response:', {
+      success: response.data.success,
+      hasData: !!response.data.data,
+      hasProgress: !!response.data.data?.progress,
+      hasAssessment: !!response.data.data?.assessment,
+      assessmentComplete: response.data.data?.assessment?.isComplete,
+      progressComplete: response.data.data?.progress?.isComplete
+    });
+    
     return response.data.data;
   }
 

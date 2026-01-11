@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clear AI-Sikshak Cache</title>
+</head>
+<body>
+    <h1>Clear AI-Sikshak Frontend Cache</h1>
+    <button onclick="clearCache()">Clear Cache</button>
+    <div id="result"></div>
+
+    <script>
+        function clearCache() {
+            // Clear localStorage
+            const keys = Object.keys(localStorage);
+            const aiSikshakKeys = keys.filter(key => key.includes('ai-sikshak') || key.includes('persist'));
+            
+            console.log('Found keys to clear:', aiSikshakKeys);
+            
+            aiSikshakKeys.forEach(key => {
+                localStorage.removeItem(key);
+                console.log('Removed:', key);
+            });
+            
+            // Clear sessionStorage too
+            const sessionKeys = Object.keys(sessionStorage);
+            const aiSikshakSessionKeys = sessionKeys.filter(key => key.includes('ai-sikshak') || key.includes('persist'));
+            
+            aiSikshakSessionKeys.forEach(key => {
+                sessionStorage.removeItem(key);
+                console.log('Removed from session:', key);
+            });
+            
+            document.getElementById('result').innerHTML = `
+                <p style="color: green;">✅ Cache cleared successfully!</p>
+                <p>Cleared ${aiSikshakKeys.length} localStorage keys and ${aiSikshakSessionKeys.length} sessionStorage keys.</p>
+                <p>Please refresh the AI-Sikshak application.</p>
+            `;
+        }
+        
+        // Show current cache contents
+        window.onload = function() {
+            const keys = Object.keys(localStorage);
+            const aiSikshakKeys = keys.filter(key => key.includes('ai-sikshak') || key.includes('persist'));
+            
+            if (aiSikshakKeys.length > 0) {
+                document.getElementById('result').innerHTML = `
+                    <p>Found ${aiSikshakKeys.length} cached keys:</p>
+                    <ul>${aiSikshakKeys.map(key => `<li>${key}</li>`).join('')}</ul>
+                `;
+            } else {
+                document.getElementById('result').innerHTML = '<p>No AI-Sikshak cache found.</p>';
+            }
+        };
+    </script>
+</body>
+</html>

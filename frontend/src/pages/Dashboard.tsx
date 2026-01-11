@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { assessmentService, Assessment } from '@/services/assessmentService';
+import { useAssessment } from '@/hooks/useAssessment';
 import { AssessmentCard } from '@/components/AssessmentCard';
 import { QuestionnaireView } from '@/components/QuestionnaireView';
 import { AssessmentResults } from '@/components/AssessmentResults';
@@ -10,97 +10,44 @@ type DashboardView = 'overview' | 'questionnaire' | 'results';
 
 export const Dashboard: React.FC = () => {
   const { user, logout } = useAuth();
+  const { 
+    currentAssessment, 
+    isLoading, 
+    error, 
+    loadAssessment, 
+    startNewAssessment, 
+    retakeCurrentAssessment, 
+    getResults,
+    refreshAssessment
+  } = useAssessment();
   const [currentView, setCurrentView] = useState<DashboardView>('overview');
-  const [assessment, setAssessment] = useState<Assessment | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     console.log('Dashboard: Loading assessment data on mount');
-    loadAssessmentData();
-  }, []);
+    console.log('Dashboard: Current assessment state:', currentAssessment);
+    loadAssessment();
+  }, [loadAssessment]);
 
-  const loadAssessmentData = async () => {
-    try {
-      console.log('Dashboard: Starting to load assessment data');
-      setLoading(true);
-      setError(null);
-      
-      // Try to get current assessment progress first
-      try {
-        console.log('Dashboard: Fetching assessment progress');
-        const progressData = await assessmentService.getProgress();
-        console.log('Dashboard: Progress data received:', progressData);
-        
-        // If assessment is complete, get the full results instead
-        if (progressData.progress.isComplete) {
-          try {
-            console.log('Dashboard: Assessment complete, fetching results');
-            const resultsData = await assessmentService.getResults();
-            console.log('Dashboard: Results data received:', resultsData);
-            setAssessment(resultsData);
-            return;
-          } catch (resultsError) {
-            console.warn('Dashboard: Failed to get results, using progress data:', resultsError);
-            // Fall through to use progress data
-          }
-        }
-        
-        // For incomplete assessments or if results failed, use progress data
-        const fullAssessment: Assessment = {
-          ...progressData.assessment,
-          progress: progressData.progress,
-          isComplete: progressData.progress.isComplete,
-          interestProfile: undefined,
-          totalCompletionTime: undefined
-        };
-        
-        console.log('Dashboard: Setting assessment from progress data:', fullAssessment);
-        setAssessment(fullAssessment);
-      } catch (progressError: any) {
-        console.log('Dashboard: Progress fetch failed:', progressError);
-        // If progress fails, try to get results directly (in case assessment is complete)
-        if (progressError.response?.status === 404) {
-          try {
-            console.log('Dashboard: Trying to fetch results directly');
-            const resultsData = await assessmentService.getResults();
-            console.log('Dashboard: Results data received directly:', resultsData);
-            setAssessment(resultsData);
-            return;
-          } catch (resultsError) {
-            console.log('Dashboard: Both progress and results failed, no assessment exists');
-            // Both progress and results failed, no assessment exists
-            setAssessment(null);
-            return;
-          }
-        }
-        throw progressError; // Re-throw other errors
-      }
-    } catch (err: any) {
-      console.error('Dashboard: Error loading assessment data:', err);
-      // Handle authentication and other errors
-      if (err.response?.status === 401) {
-        setError('Your session has expired. Please log in again.');
-      } else if (err.response?.status === 404) {
-        // No assessment exists - this is normal for new users
-        console.log('Dashboard: No assessment found (404), setting to null');
-        setAssessment(null);
-      } else {
-        console.error('Dashboard: Unexpected error:', err);
-        setError('Failed to load assessment data');
-      }
-    } finally {
-      console.log('Dashboard: Assessment loading completed');
-      setLoading(false);
-    }
-  };
+  // Debug logging for assessment state changes
+  useEffect(() => {
+    console.log('Dashboard: Assessment state changed:', {
+      currentAssessment,
+      isLoading,
+      error,
+      isComplete: currentAssessment?.isComplete,
+      hasInterestProfile: !!currentAssessment?.interestProfile
+    });
+  }, [currentAssessment, isLoading, error]);
 
   const handleStartAssessment = async () => {
     try {
-      const newAssessment = await assessmentService.startAssessment();
-      setAssessment(newAssessment);
-      setCurrentView('questionnaire');
-      toast.success('Assessment started successfully!');
+      const result = await startNewAssessment();
+      if (result.success) {
+        setCurrentView('questionnaire');
+        toast.success('Assessment started successfully!');
+      } else {
+        toast.error('Failed to start assessment. Please try again.');
+      }
     } catch (err: any) {
       console.error('Error starting assessment:', err);
       toast.error('Failed to start assessment. Please try again.');
@@ -109,9 +56,12 @@ export const Dashboard: React.FC = () => {
 
   const handleViewResults = async () => {
     try {
-      const results = await assessmentService.getResults();
-      setAssessment(results);
-      setCurrentView('results');
+      const result = await getResults();
+      if (result.success) {
+        setCurrentView('results');
+      } else {
+        toast.error('Failed to load assessment results.');
+      }
     } catch (err: any) {
       console.error('Error loading results:', err);
       toast.error('Failed to load assessment results.');
@@ -120,12 +70,15 @@ export const Dashboard: React.FC = () => {
 
   const handleRetakeAssessment = async () => {
     try {
-      const retakeData = await assessmentService.retakeAssessment({
+      const result = await retakeCurrentAssessment({
         reason: 'User requested retake from dashboard'
       });
-      setAssessment(retakeData.assessment);
-      setCurrentView('questionnaire');
-      toast.success('New assessment started!');
+      if (result.success) {
+        setCurrentView('questionnaire');
+        toast.success('New assessment started!');
+      } else {
+        toast.error('Failed to start new assessment. Please try again.');
+      }
     } catch (err: any) {
       console.error('Error retaking assessment:', err);
       toast.error('Failed to start new assessment. Please try again.');
@@ -133,7 +86,7 @@ export const Dashboard: React.FC = () => {
   };
 
   const renderContent = () => {
-    if (loading) {
+    if (isLoading) {
       return (
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -152,10 +105,19 @@ export const Dashboard: React.FC = () => {
           </div>
           <div className="mt-2 flex space-x-3">
             <button
-              onClick={loadAssessmentData}
+              onClick={() => refreshAssessment()}
               className="text-sm text-red-600 hover:text-red-500 font-medium"
             >
               Try again
+            </button>
+            <button
+              onClick={() => {
+                console.log('Manual refresh clicked');
+                refreshAssessment();
+              }}
+              className="text-sm text-blue-600 hover:text-blue-500 font-medium"
+            >
+              Refresh Data
             </button>
             {error.includes('session has expired') && (
               <button
@@ -174,10 +136,41 @@ export const Dashboard: React.FC = () => {
       case 'questionnaire':
         return (
           <QuestionnaireView
-            assessment={assessment}
-            onComplete={(completedAssessment) => {
-              setAssessment(completedAssessment);
-              setCurrentView('results');
+            assessment={currentAssessment}
+            onComplete={async (completedAssessment) => {
+              console.log('Dashboard: Assessment completed, received data:', {
+                hasAssessment: !!completedAssessment,
+                isComplete: completedAssessment?.isComplete,
+                hasInterestProfile: !!completedAssessment?.interestProfile
+              });
+              
+              // Reload assessment data to get the latest state from backend
+              console.log('Dashboard: Assessment completed, refreshing data');
+              
+              // Add a small delay to ensure backend processing is complete
+              setTimeout(async () => {
+                const result = await refreshAssessment();
+                console.log('Dashboard: Refresh result:', {
+                  success: result.success,
+                  hasData: !!result.data,
+                  isComplete: result.data?.isComplete,
+                  hasInterestProfile: !!result.data?.interestProfile
+                });
+                
+                if (result.success && result.data?.isComplete) {
+                  console.log('Dashboard: Assessment data refreshed successfully, showing results');
+                  setCurrentView('results');
+                } else {
+                  console.error('Dashboard: Failed to refresh assessment data or assessment not complete:', result.error);
+                  // Still try to show results if we have completed assessment data
+                  if (completedAssessment?.isComplete) {
+                    console.log('Dashboard: Using completed assessment data directly');
+                    setCurrentView('results');
+                  } else {
+                    toast.error('Assessment completed but failed to load results. Please refresh the page.');
+                  }
+                }
+              }, 1500); // Increased delay to ensure backend processing
             }}
             onBack={() => setCurrentView('overview')}
           />
@@ -186,7 +179,7 @@ export const Dashboard: React.FC = () => {
       case 'results':
         return (
           <AssessmentResults
-            assessment={assessment}
+            assessment={currentAssessment}
             onRetake={handleRetakeAssessment}
             onBack={() => setCurrentView('overview')}
           />
@@ -205,7 +198,7 @@ export const Dashboard: React.FC = () => {
               </p>
               
               <AssessmentCard
-                assessment={assessment}
+                assessment={currentAssessment}
                 onStart={handleStartAssessment}
                 onContinue={() => setCurrentView('questionnaire')}
                 onViewResults={handleViewResults}
@@ -223,10 +216,10 @@ export const Dashboard: React.FC = () => {
                   Personalized learning paths based on your assessment results.
                 </p>
                 <button
-                  disabled={!assessment?.isComplete}
+                  disabled={!currentAssessment?.isComplete}
                   className="text-blue-600 hover:text-blue-500 font-medium text-sm disabled:text-gray-400 disabled:cursor-not-allowed"
                 >
-                  {assessment?.isComplete ? 'View Roadmaps' : 'Complete Assessment First'}
+                  {currentAssessment?.isComplete ? 'View Roadmaps' : 'Complete Assessment First'}
                 </button>
               </div>
 
@@ -238,10 +231,10 @@ export const Dashboard: React.FC = () => {
                   Curated job opportunities matching your interests.
                 </p>
                 <button
-                  disabled={!assessment?.isComplete}
+                  disabled={!currentAssessment?.isComplete}
                   className="text-blue-600 hover:text-blue-500 font-medium text-sm disabled:text-gray-400 disabled:cursor-not-allowed"
                 >
-                  {assessment?.isComplete ? 'Browse Jobs' : 'Complete Assessment First'}
+                  {currentAssessment?.isComplete ? 'Browse Jobs' : 'Complete Assessment First'}
                 </button>
               </div>
 
@@ -288,7 +281,7 @@ export const Dashboard: React.FC = () => {
                 >
                   Dashboard
                 </button>
-                {assessment && (
+                {currentAssessment && (
                   <>
                     <button
                       onClick={() => setCurrentView('questionnaire')}
@@ -300,7 +293,7 @@ export const Dashboard: React.FC = () => {
                     >
                       Assessment
                     </button>
-                    {assessment.isComplete && (
+                    {currentAssessment.isComplete && (
                       <button
                         onClick={() => setCurrentView('results')}
                         className={`px-3 py-2 text-sm font-medium ${

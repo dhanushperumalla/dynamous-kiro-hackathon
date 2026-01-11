@@ -313,8 +313,26 @@ export class AssessmentController {
       // Save to trigger pre-save middleware
       await assessment.save();
       
+      // Debug logging after save
+      logger.info('Assessment saved after adding responses', {
+        userId,
+        assessmentId: assessment._id,
+        answeredQuestions: assessment.answeredQuestions,
+        totalQuestions: assessment.totalQuestions,
+        isComplete: assessment.isComplete,
+        responsesCount: assessment.responses.length
+      });
+      
       // Validate responses
       const validation = await AssessmentValidationService.validateAssessment(assessment, questionnaire);
+      
+      logger.info('Assessment validation completed', {
+        userId,
+        assessmentId: assessment._id,
+        isValid: validation.isValid,
+        completeness: validation.completeness,
+        isPartial: submission.isPartial
+      });
       
       if (!validation.isValid && !submission.isPartial) {
         res.status(400).json({
@@ -337,10 +355,30 @@ export class AssessmentController {
         return;
       }
       
+      // Check if assessment should be marked as complete
+      const isNowComplete = assessment.answeredQuestions >= assessment.totalQuestions;
+      
+      logger.info('Checking assessment completion status', {
+        userId,
+        assessmentId: assessment._id,
+        answeredQuestions: assessment.answeredQuestions,
+        totalQuestions: assessment.totalQuestions,
+        isNowComplete,
+        wasAlreadyComplete: assessment.isComplete,
+        isPartial: submission.isPartial
+      });
+      
       // Generate interest profile if assessment is complete
-      let interestProfile = null;
-      if (assessment.isComplete || (!submission.isPartial && validation.completeness === 100)) {
+      let interestProfile = assessment.interestProfile; // Keep existing profile if any
+      
+      if (isNowComplete && !submission.isPartial) {
         try {
+          logger.info('Generating interest profile for completed assessment', {
+            userId,
+            assessmentId: assessment._id,
+            responseCount: assessment.responses.length
+          });
+          
           interestProfile = await InterestAnalysisService.analyzeResponses(
             assessment.responses,
             questionnaire.questions
@@ -350,16 +388,16 @@ export class AssessmentController {
           assessment.isComplete = true;
           assessment.completedAt = new Date();
           
-          // Update user stats
-          await User.findByIdAndUpdate(userId, {
-            'stats.assessmentCompleted': true
-          });
-          
-          logger.info('Assessment completed and analyzed', {
+          logger.info('Interest profile generated and assessment marked complete', {
             userId,
             assessmentId: assessment._id,
             confidence: interestProfile.confidence,
             topDimensions: interestProfile.topDimensions.slice(0, 3)
+          });
+          
+          // Update user stats
+          await User.findByIdAndUpdate(userId, {
+            'stats.assessmentCompleted': true
           });
           
         } catch (analysisError) {
@@ -369,11 +407,28 @@ export class AssessmentController {
             assessmentId: assessment._id
           });
           
-          // Continue without analysis - can be processed later
+          // Mark as complete even if analysis fails - can be processed later
+          assessment.isComplete = true;
+          assessment.completedAt = new Date();
+          
+          logger.info('Assessment marked complete despite analysis error', {
+            userId,
+            assessmentId: assessment._id
+          });
         }
       }
       
       await assessment.save();
+      
+      // Final logging after save
+      logger.info('Assessment saved with final state', {
+        userId,
+        assessmentId: assessment._id,
+        isComplete: assessment.isComplete,
+        hasInterestProfile: !!assessment.interestProfile,
+        answeredQuestions: assessment.answeredQuestions,
+        totalQuestions: assessment.totalQuestions
+      });
       
       const completionPercentage = assessment.totalQuestions > 0 ? 
         Math.round((assessment.answeredQuestions / assessment.totalQuestions) * 100) : 0;
@@ -470,6 +525,15 @@ export class AssessmentController {
       const totalCompletionTime = assessment.completedAt && assessment.startedAt ? 
         assessment.completedAt.getTime() - assessment.startedAt.getTime() : null;
       
+      // Debug logging
+      logger.info('Assessment results data', {
+        userId,
+        assessmentId: assessment._id,
+        isComplete: assessment.isComplete,
+        hasInterestProfile: !!assessment.interestProfile,
+        interestProfileKeys: assessment.interestProfile ? Object.keys(assessment.interestProfile) : null
+      });
+      
       res.status(200).json({
         success: true,
         message: 'Assessment results retrieved successfully',
@@ -479,6 +543,7 @@ export class AssessmentController {
             version: assessment.version,
             startedAt: assessment.startedAt,
             completedAt: assessment.completedAt,
+            isComplete: assessment.isComplete,
             progress: {
               totalQuestions: assessment.totalQuestions,
               answeredQuestions: assessment.answeredQuestions,
@@ -665,10 +730,26 @@ export class AssessmentController {
         return;
       }
       
-      // Get current assessment (any assessment for this user)
-      const assessment = await AssessmentResponse.findOne({
-        userId
-      }).sort({ createdAt: -1 });
+      // Get current assessment (prioritize completed assessments)
+      let assessment = await AssessmentResponse.findOne({
+        userId,
+        isComplete: true
+      }).sort({ completedAt: -1 });
+      
+      // If no completed assessment, get the latest incomplete one
+      if (!assessment) {
+        assessment = await AssessmentResponse.findOne({
+          userId,
+          isComplete: false
+        }).sort({ createdAt: -1 });
+      }
+      
+      // If still no assessment, get any assessment for this user
+      if (!assessment) {
+        assessment = await AssessmentResponse.findOne({
+          userId
+        }).sort({ createdAt: -1 });
+      }
       
       if (!assessment) {
         res.status(404).json({
@@ -684,6 +765,15 @@ export class AssessmentController {
       
       const completionPercentage = assessment.totalQuestions > 0 ? 
         Math.round((assessment.answeredQuestions / assessment.totalQuestions) * 100) : 0;
+      
+      // Debug logging
+      logger.info('Assessment progress data', {
+        userId,
+        assessmentId: assessment._id,
+        isComplete: assessment.isComplete,
+        hasInterestProfile: !!assessment.interestProfile,
+        completionPercentage
+      });
       
       res.status(200).json({
         success: true,

@@ -215,9 +215,11 @@ assessmentResponseSchema.pre('save', function(this: IAssessmentResponse, next) {
     }
     
     // Set completion status and time
-    if (this.answeredQuestions === this.totalQuestions && !this.completedAt) {
+    if (this.answeredQuestions === this.totalQuestions) {
       this.isComplete = true;
-      this.completedAt = new Date();
+      if (!this.completedAt) {
+        this.completedAt = new Date();
+      }
     }
     
     logger.debug('Assessment pre-save processing completed', {

@@ -24,6 +24,13 @@ export const AssessmentResults: React.FC<AssessmentResultsProps> = ({
   const [showRecommendations, setShowRecommendations] = useState(false);
   const [recommendationsGenerated, setRecommendationsGenerated] = useState(false);
 
+  // Debug logging
+  useEffect(() => {
+    console.log('AssessmentResults: Received assessment data:', assessment);
+    console.log('AssessmentResults: Assessment isComplete:', assessment?.isComplete);
+    console.log('AssessmentResults: Assessment interestProfile:', assessment?.interestProfile);
+  }, [assessment]);
+
   useEffect(() => {
     // Auto-generate recommendations when assessment is complete
     if (assessment?.isComplete && assessment.interestProfile && !recommendationsGenerated && user?.id) {

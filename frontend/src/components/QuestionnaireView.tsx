@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { assessmentService, Assessment, Questionnaire, QuestionResponse } from '@/services/assessmentService';
+import { useAssessment } from '@/hooks/useAssessment';
 import toast from 'react-hot-toast';
 
 interface QuestionnaireViewProps {
@@ -13,6 +14,7 @@ export const QuestionnaireView: React.FC<QuestionnaireViewProps> = ({
   onComplete,
   onBack
 }) => {
+  const { submitResponses } = useAssessment();
   const [questionnaire, setQuestionnaire] = useState<Questionnaire | null>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [responses, setResponses] = useState<Record<string, QuestionResponse>>({});
@@ -100,13 +102,33 @@ export const QuestionnaireView: React.FC<QuestionnaireViewProps> = ({
       setSubmitting(true);
       
       const responseArray = Object.values(responses);
-      const result = await assessmentService.submitResponses({
+      
+      console.log('QuestionnaireView: Submitting assessment with responses:', {
+        responseCount: responseArray.length,
+        totalQuestions: questionnaire.questions.length,
+        isComplete: responseArray.length === questionnaire.questions.length
+      });
+      
+      const result = await submitResponses({
         responses: responseArray,
         isPartial: false
       });
 
-      toast.success('Assessment completed successfully!');
-      onComplete(result.assessment);
+      console.log('QuestionnaireView: Submission result:', {
+        success: result.success,
+        hasData: !!result.data,
+        isComplete: result.data?.isComplete,
+        hasInterestProfile: !!result.data?.interestProfile
+      });
+
+      if (result.success && result.data) {
+        toast.success('Assessment completed successfully!');
+        console.log('QuestionnaireView: Assessment submitted successfully, calling onComplete');
+        onComplete(result.data);
+      } else {
+        console.error('QuestionnaireView: Assessment submission failed:', result.error);
+        toast.error('Failed to submit assessment. Please try again.');
+      }
     } catch (err: any) {
       console.error('Error submitting assessment:', err);
       toast.error('Failed to submit assessment. Please try again.');
@@ -120,11 +142,16 @@ export const QuestionnaireView: React.FC<QuestionnaireViewProps> = ({
 
     try {
       const responseArray = Object.values(responses);
-      await assessmentService.submitResponses({
+      const result = await submitResponses({
         responses: responseArray,
         isPartial: true
       });
-      toast.success('Progress saved!');
+      
+      if (result.success) {
+        toast.success('Progress saved!');
+      } else {
+        toast.error('Failed to save progress');
+      }
     } catch (err) {
       console.error('Error saving progress:', err);
       toast.error('Failed to save progress');
