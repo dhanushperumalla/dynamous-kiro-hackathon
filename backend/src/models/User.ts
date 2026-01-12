@@ -136,6 +136,17 @@ const userPreferencesSchema = new Schema<IUserPreferences>({
       message: 'Invalid language code format'
     }
   },
+  deviceTokens: [{
+    type: String,
+    trim: true,
+    validate: {
+      validator: function(value: string) {
+        // Basic FCM token validation (tokens are typically 152+ characters)
+        return value.length >= 140 && /^[A-Za-z0-9_-]+$/.test(value);
+      },
+      message: 'Invalid device token format'
+    }
+  }],
   emailNotifications: {
     weeklyProgress: { type: Boolean, default: true },
     milestoneAchievements: { type: Boolean, default: true },

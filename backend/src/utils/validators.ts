@@ -663,3 +663,303 @@ export const recommendationValidationSchemas = {
       .default(false)
   })
 };
+
+// Learning path validation schemas
+export const learningValidationSchemas = {
+  // Generate learning path validation
+  generateLearningPath: Joi.object({
+    domainId: Joi.string()
+      .pattern(/^[0-9a-fA-F]{24}$/)
+      .required()
+      .messages({
+        'string.pattern.base': 'Domain ID must be a valid ObjectId',
+        'any.required': 'Domain ID is required'
+      }),
+    personalization: Joi.object({
+      learningPace: Joi.string()
+        .valid('slow', 'moderate', 'fast', 'intensive')
+        .optional()
+        .messages({
+          'any.only': 'Learning pace must be one of: slow, moderate, fast, intensive'
+        }),
+      preferredLearningStyle: Joi.string()
+        .valid('visual', 'auditory', 'kinesthetic', 'reading', 'mixed')
+        .optional()
+        .messages({
+          'any.only': 'Learning style must be one of: visual, auditory, kinesthetic, reading, mixed'
+        }),
+      availableHoursPerWeek: Joi.number()
+        .integer()
+        .min(1)
+        .max(40)
+        .optional()
+        .messages({
+          'number.min': 'Available hours per week must be at least 1',
+          'number.max': 'Available hours per week cannot exceed 40'
+        }),
+      skillLevel: Joi.string()
+        .valid('absolute_beginner', 'beginner', 'some_experience', 'intermediate', 'advanced', 'expert')
+        .optional()
+        .messages({
+          'any.only': 'Skill level must be one of: absolute_beginner, beginner, some_experience, intermediate, advanced, expert'
+        }),
+      focusAreas: Joi.array()
+        .items(Joi.string().max(100).trim())
+        .max(10)
+        .optional()
+        .messages({
+          'array.max': 'You can have a maximum of 10 focus areas',
+          'string.max': 'Each focus area cannot exceed 100 characters'
+        }),
+      excludedTopics: Joi.array()
+        .items(Joi.string().max(100).trim())
+        .max(10)
+        .optional()
+        .messages({
+          'array.max': 'You can have a maximum of 10 excluded topics',
+          'string.max': 'Each excluded topic cannot exceed 100 characters'
+        })
+    }).optional(),
+    customizations: Joi.object({
+      excludeModules: Joi.array()
+        .items(Joi.string())
+        .optional(),
+      prioritizeSkills: Joi.array()
+        .items(Joi.string().max(100).trim())
+        .optional(),
+      timeConstraints: Joi.object({
+        totalWeeks: Joi.number()
+          .integer()
+          .min(4)
+          .max(104)
+          .optional()
+          .messages({
+            'number.min': 'Total weeks must be at least 4',
+            'number.max': 'Total weeks cannot exceed 104 (2 years)'
+          }),
+        hoursPerWeek: Joi.number()
+          .integer()
+          .min(1)
+          .max(40)
+          .optional()
+          .messages({
+            'number.min': 'Hours per week must be at least 1',
+            'number.max': 'Hours per week cannot exceed 40'
+          })
+      }).optional(),
+      focusAreas: Joi.array()
+        .items(Joi.string().max(100).trim())
+        .optional()
+    }).optional()
+  }),
+
+  // Get learning paths validation
+  getLearningPaths: Joi.object({
+    includeInactive: Joi.boolean()
+      .optional()
+      .default(false),
+    domainId: Joi.string()
+      .pattern(/^[0-9a-fA-F]{24}$/)
+      .optional()
+      .messages({
+        'string.pattern.base': 'Domain ID must be a valid ObjectId'
+      }),
+    difficulty: Joi.string()
+      .valid('beginner', 'intermediate', 'advanced', 'expert')
+      .optional(),
+    sortBy: Joi.string()
+      .valid('createdAt', 'updatedAt', 'progress', 'duration', 'difficulty', 'title')
+      .optional()
+      .default('createdAt'),
+    sortOrder: Joi.string()
+      .valid('asc', 'desc')
+      .optional()
+      .default('desc'),
+    limit: Joi.number()
+      .integer()
+      .min(1)
+      .max(50)
+      .optional()
+      .default(10)
+      .messages({
+        'number.min': 'Limit must be at least 1',
+        'number.max': 'Limit cannot exceed 50'
+      }),
+    offset: Joi.number()
+      .integer()
+      .min(0)
+      .optional()
+      .default(0)
+      .messages({
+        'number.min': 'Offset cannot be negative'
+      })
+  }),
+
+  // Get learning path validation
+  getLearningPath: Joi.object({
+    includeModules: Joi.boolean()
+      .optional()
+      .default(true),
+    includeProgress: Joi.boolean()
+      .optional()
+      .default(true)
+  }),
+
+  // Update learning path validation
+  updateLearningPath: Joi.object({
+    title: Joi.string()
+      .max(200)
+      .trim()
+      .optional()
+      .messages({
+        'string.max': 'Title cannot exceed 200 characters'
+      }),
+    description: Joi.string()
+      .max(1000)
+      .trim()
+      .optional()
+      .messages({
+        'string.max': 'Description cannot exceed 1000 characters'
+      }),
+    personalization: Joi.object({
+      learningPace: Joi.string()
+        .valid('slow', 'moderate', 'fast', 'intensive')
+        .optional(),
+      preferredLearningStyle: Joi.string()
+        .valid('visual', 'auditory', 'kinesthetic', 'reading', 'mixed')
+        .optional(),
+      availableHoursPerWeek: Joi.number()
+        .integer()
+        .min(1)
+        .max(40)
+        .optional(),
+      skillLevel: Joi.string()
+        .valid('absolute_beginner', 'beginner', 'some_experience', 'intermediate', 'advanced', 'expert')
+        .optional(),
+      focusAreas: Joi.array()
+        .items(Joi.string().max(100).trim())
+        .max(10)
+        .optional(),
+      excludedTopics: Joi.array()
+        .items(Joi.string().max(100).trim())
+        .max(10)
+        .optional()
+    }).optional(),
+    isActive: Joi.boolean()
+      .optional()
+  }),
+
+  // Get module content validation
+  getModuleContent: Joi.object({
+    includeResources: Joi.boolean()
+      .optional()
+      .default(true),
+    includeWeeklyTargets: Joi.boolean()
+      .optional()
+      .default(true)
+  }),
+
+  // Get weekly targets validation
+  getWeeklyTargets: Joi.object({
+    week: Joi.number()
+      .integer()
+      .min(1)
+      .optional()
+      .messages({
+        'number.min': 'Week must be at least 1'
+      }),
+    includeTasks: Joi.boolean()
+      .optional()
+      .default(true),
+    includeCompleted: Joi.boolean()
+      .optional()
+      .default(true)
+  }),
+
+  // Update weekly target validation
+  updateWeeklyTarget: Joi.object({
+    completed: Joi.boolean()
+      .optional(),
+    hoursSpent: Joi.number()
+      .min(0)
+      .max(40)
+      .optional()
+      .messages({
+        'number.min': 'Hours spent cannot be negative',
+        'number.max': 'Hours spent cannot exceed 40 for a single target'
+      }),
+    notes: Joi.string()
+      .max(500)
+      .trim()
+      .optional()
+      .messages({
+        'string.max': 'Notes cannot exceed 500 characters'
+      }),
+    taskUpdates: Joi.array()
+      .items(Joi.object({
+        taskId: Joi.string()
+          .required()
+          .messages({
+            'any.required': 'Task ID is required'
+          }),
+        completed: Joi.boolean()
+          .optional(),
+        notes: Joi.string()
+          .max(500)
+          .trim()
+          .optional()
+          .messages({
+            'string.max': 'Task notes cannot exceed 500 characters'
+          })
+      }))
+      .optional()
+  }),
+
+  // Path ID parameter validation
+  pathIdParam: Joi.object({
+    pathId: Joi.string()
+      .pattern(/^[0-9a-fA-F]{24}$/)
+      .required()
+      .messages({
+        'string.pattern.base': 'Path ID must be a valid ObjectId',
+        'any.required': 'Path ID is required'
+      })
+  }),
+
+  // Module parameters validation
+  moduleParams: Joi.object({
+    pathId: Joi.string()
+      .pattern(/^[0-9a-fA-F]{24}$/)
+      .required()
+      .messages({
+        'string.pattern.base': 'Path ID must be a valid ObjectId',
+        'any.required': 'Path ID is required'
+      }),
+    moduleId: Joi.string()
+      .required()
+      .messages({
+        'any.required': 'Module ID is required'
+      })
+  }),
+
+  // Target parameters validation
+  targetParams: Joi.object({
+    pathId: Joi.string()
+      .pattern(/^[0-9a-fA-F]{24}$/)
+      .required()
+      .messages({
+        'string.pattern.base': 'Path ID must be a valid ObjectId',
+        'any.required': 'Path ID is required'
+      }),
+    moduleId: Joi.string()
+      .required()
+      .messages({
+        'any.required': 'Module ID is required'
+      }),
+    targetId: Joi.string()
+      .required()
+      .messages({
+        'any.required': 'Target ID is required'
+      })
+  })
+};

@@ -21,6 +21,7 @@ export interface IUserPreferences {
   preferredLearningStyle: 'visual' | 'auditory' | 'kinesthetic' | 'reading' | 'mixed';
   timeZone?: string;
   language: string;
+  deviceTokens?: string[]; // FCM device tokens for push notifications
   emailNotifications: {
     weeklyProgress: boolean;
     milestoneAchievements: boolean;

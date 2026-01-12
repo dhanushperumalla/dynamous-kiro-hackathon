@@ -12,6 +12,9 @@ import authRoutes from '@/routes/auth';
 import userRoutes from '@/routes/user';
 import assessmentRoutes from '@/routes/assessmentRoutes';
 import recommendationRoutes from '@/routes/recommendationRoutes';
+import learningRoutes from '@/routes/learningRoutes';
+import progressRoutes from '@/routes/progressRoutes';
+import deviceRoutes from '@/routes/deviceRoutes';
 
 // Create Express application
 const app = express();
@@ -134,6 +137,9 @@ app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/assessment', assessmentRoutes);
 app.use('/api/recommendations', recommendationRoutes);
+app.use('/api/learning', learningRoutes);
+app.use('/api/progress', progressRoutes);
+app.use('/api/devices', deviceRoutes);
 
 // API documentation endpoint
 app.get('/api', (_req, res) => {
@@ -146,7 +152,10 @@ app.get('/api', (_req, res) => {
       auth: '/api/auth',
       user: '/api/user',
       assessment: '/api/assessment',
-      recommendations: '/api/recommendations'
+      recommendations: '/api/recommendations',
+      learning: '/api/learning',
+      progress: '/api/progress',
+      devices: '/api/devices'
     },
     timestamp: new Date().toISOString()
   });
