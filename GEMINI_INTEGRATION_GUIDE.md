@@ -14,7 +14,7 @@ The Gemini AI service has been integrated into the AI-Sikshak backend to provide
 
 Added to `backend/.env`:
 ```env
-GEMINI_API_KEY=AIzaSyCm1mDB4XHOl6p5o2a6DOWgwMKRvk2oP8A
+GEMINI_API_KEY=
 GEMINI_MODEL=gemini-1.5-pro
 AI_PROVIDER=gemini
 ```
