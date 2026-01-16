@@ -787,8 +787,15 @@ learningPathSchema.virtual('currentWeek').get(function() {
 learningPathSchema.pre('save', function(next) {
   // Validate module order sequence
   const orders = this.modules.map(m => m.order).sort((a, b) => a - b);
+  
+  // Debug logging
+  console.log('Module validation - Total modules:', this.modules.length);
+  console.log('Module orders (sorted):', orders);
+  console.log('Module details:', this.modules.map(m => ({ id: m.id, title: m.title, order: m.order })));
+  
   for (let i = 0; i < orders.length; i++) {
     if (orders[i] !== i + 1) {
+      console.error(`Order validation failed at index ${i}: expected ${i + 1}, got ${orders[i]}`);
       return next(new Error('Module orders must be sequential starting from 1'));
     }
   }

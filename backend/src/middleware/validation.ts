@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { validationResult } from 'express-validator';
 import Joi from 'joi';
 import { logger } from '@/utils/logger';
 
@@ -272,6 +273,54 @@ function sanitizeObject(obj: any): any {
   
   return obj;
 }
+
+/**
+ * Express-validator middleware to handle validation results
+ * Use this after express-validator validation chains
+ */
+export const validateRequest = (req: Request, res: Response, next: NextFunction): void => {
+  const errors = validationResult(req);
+  const requestId = req.headers['x-request-id'] as string || 'unknown';
+  
+  if (!errors.isEmpty()) {
+    // Format validation errors to match our standard format
+    const validationErrors = errors.array().map(error => ({
+      field: error.type === 'field' ? (error as any).path : error.type,
+      message: error.msg,
+      value: error.type === 'field' ? (error as any).value : undefined
+    }));
+    
+    // Log validation error
+    logger.warn('Express-validator validation error', {
+      requestId,
+      errors: validationErrors,
+      userAgent: req.headers['user-agent'],
+      ip: req.ip
+    });
+    
+    // Send error response
+    const errorResponse: ValidationErrorResponse = {
+      success: false,
+      error: {
+        code: 'VALIDATION_ERROR',
+        message: 'Request validation failed',
+        details: validationErrors,
+        timestamp: new Date().toISOString(),
+        requestId
+      }
+    };
+    
+    res.status(400).json(errorResponse);
+    return;
+  }
+  
+  // Log successful validation in debug mode
+  logger.debug('Express-validator validation successful', {
+    requestId
+  });
+  
+  next();
+};
 
 /**
  * File upload validation middleware

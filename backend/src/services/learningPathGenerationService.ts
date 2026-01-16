@@ -1,5 +1,6 @@
 import { CareerDomain } from '@/models/CareerDomain';
 import { User } from '@/models/User';
+import { geminiService } from '@/services/geminiService';
 import {
   ILearningPath,
   ILearningModule,
@@ -60,11 +61,45 @@ export class LearningPathGenerationService {
       // Generate personalization settings
       const personalization = this.generatePersonalizationSettings(user, request.personalization);
 
-      // Generate learning modules based on domain skills and user level
-      const modules = await this.generateLearningModules(domain, personalization, request.customizations);
+      // Try to generate AI-powered roadmap if Gemini is available
+      let aiRoadmap: any = null;
+      if (geminiService.isAvailable()) {
+        try {
+          logger.info('Generating AI-powered learning roadmap', {
+            userId: request.userId,
+            domain: domain.title
+          });
+          
+          aiRoadmap = await geminiService.generateLearningRoadmap({
+            domain: domain.title,
+            skillLevel: personalization.skillLevel,
+            availableHoursPerWeek: personalization.availableHoursPerWeek,
+            learningPace: personalization.learningPace,
+            focusAreas: personalization.focusAreas,
+            currentSkills: []
+          });
+          
+          logger.info('AI roadmap generated successfully', {
+            userId: request.userId,
+            moduleCount: aiRoadmap.modules?.length || 0
+          });
+        } catch (error) {
+          logger.warn('AI roadmap generation failed, using template-based approach', {
+            userId: request.userId,
+            error: error instanceof Error ? error.message : 'Unknown error'
+          });
+        }
+      }
+
+      // Generate learning modules (enhanced with AI if available)
+      const modules = aiRoadmap?.modules 
+        ? await this.convertAIModulesToLearningModules(aiRoadmap.modules, domain, personalization)
+        : await this.generateLearningModules(domain, personalization, request.customizations);
 
       // Calculate total duration and adjust based on user pace
-      const estimatedDuration = this.calculatePathDuration(modules, personalization);
+      const estimatedDuration = aiRoadmap?.totalDuration 
+        ? this.parseAIDuration(aiRoadmap.totalDuration)
+        : this.calculatePathDuration(modules, personalization);
 
       // Create the learning path
       const learningPath: ILearningPath = {
@@ -86,7 +121,7 @@ export class LearningPathGenerationService {
           averageWeeklyHours: 0,
           streakWeeks: 0,
           lastActivityDate: new Date(),
-          milestones: [],
+          milestones: aiRoadmap?.milestones || [],
           skillsAcquired: [],
           certificationsEarned: []
         },
@@ -101,7 +136,8 @@ export class LearningPathGenerationService {
         domainId: request.domainId,
         moduleCount: modules.length,
         estimatedDuration,
-        difficulty: learningPath.difficulty
+        difficulty: learningPath.difficulty,
+        aiEnhanced: !!aiRoadmap
       });
 
       return learningPath;
@@ -179,6 +215,11 @@ export class LearningPathGenerationService {
     // Generate capstone/project module
     const capstoneModule = this.generateCapstoneModule(domain, personalization);
     modules.push(capstoneModule);
+
+    // Renumber modules to ensure sequential ordering
+    modules.forEach((module, index) => {
+      module.order = index + 1;
+    });
 
     // Set up prerequisite dependencies
     this.setupPrerequisiteDependencies(modules);
@@ -433,7 +474,7 @@ export class LearningPathGenerationService {
       id: 'capstone-module',
       title: 'Capstone Project',
       description: 'Apply all learned skills in a comprehensive real-world project.',
-      order: 10, // Last module
+      order: 999, // Will be renumbered in generateLearningModules
       prerequisites: ['technical-module', 'tools-module'],
       estimatedHours: weeklyTargets.reduce((total, target) => total + target.estimatedHours, 0),
       difficulty: DifficultyLevel.ADVANCED,
@@ -965,5 +1006,111 @@ export class LearningPathGenerationService {
     }
     
     return channels;
+  }
+
+  /**
+   * Convert AI-generated modules to learning modules format
+   */
+  private static async convertAIModulesToLearningModules(
+    aiModules: any[],
+    _domain: ICareerDomainDocument,
+    _personalization: IPersonalizationSettings
+  ): Promise<ILearningModule[]> {
+    const modules: ILearningModule[] = [];
+    
+    for (let i = 0; i < aiModules.length; i++) {
+      const aiModule = aiModules[i];
+      const moduleId = `module-${i + 1}`;
+      
+      // Convert AI weekly targets to our format
+      const weeklyTargets: IWeeklyTarget[] = (aiModule.weeklyTargets || []).map((target: any, idx: number) => ({
+        id: `${moduleId}-week-${target.week || idx + 1}`,
+        weekNumber: target.week || idx + 1,
+        title: target.title || `Week ${target.week || idx + 1}`,
+        description: target.tasks?.join(', ') || '',
+        tasks: (target.tasks || []).map((task: string, taskIdx: number) => ({
+          id: `${moduleId}-week-${target.week || idx + 1}-task-${taskIdx + 1}`,
+          title: task,
+          description: task,
+          type: TaskType.READING,
+          priority: TaskPriority.MEDIUM,
+          estimatedHours: target.estimatedHours / (target.tasks?.length || 1),
+          isCompleted: false,
+          resources: []
+        })),
+        estimatedHours: target.estimatedHours || 10,
+        isCompleted: false,
+        completedAt: undefined
+      }));
+      
+      // Convert AI resources to our format
+      const resources: IResource[] = (aiModule.resources || []).map((res: any, idx: number) => ({
+        id: `${moduleId}-resource-${idx + 1}`,
+        title: res.title || 'Resource',
+        description: res.title || '',
+        type: this.mapAIResourceType(res.type),
+        format: ResourceFormat.ONLINE,
+        url: res.url || '',
+        estimatedDuration: 0,
+        difficulty: DifficultyLevel.INTERMEDIATE,
+        isFree: true,
+        rating: 0,
+        provider: 'AI Recommended'
+      }));
+      
+      modules.push({
+        id: moduleId,
+        title: aiModule.title || `Module ${i + 1}`,
+        description: aiModule.description || '',
+        order: i + 1,
+        estimatedHours: weeklyTargets.reduce((sum, wt) => sum + wt.estimatedHours, 0),
+        difficulty: DifficultyLevel.INTERMEDIATE,
+        skills: aiModule.topics || [],
+        prerequisites: i > 0 ? [modules[i - 1]!.id] : [],
+        weeklyTargets,
+        resources,
+        assessments: [],
+        isOptional: false,
+        completionCriteria: {
+          requiredTasks: weeklyTargets.reduce((sum, wt) => sum + wt.tasks.length, 0),
+          requiredHours: weeklyTargets.reduce((sum, wt) => sum + wt.estimatedHours, 0),
+          requiredAssessments: [],
+          requiredSkillLevel: 5
+        }
+      });
+    }
+    
+    return modules;
+  }
+
+  /**
+   * Parse AI duration string to weeks
+   */
+  private static parseAIDuration(duration: string): number {
+    const match = duration.match(/(\d+)\s*(week|month|day)/i);
+    if (!match || !match[1] || !match[2]) return 12; // Default 12 weeks
+    
+    const value = parseInt(match[1]);
+    const unit = match[2].toLowerCase();
+    
+    if (unit.startsWith('month')) return value * 4;
+    if (unit.startsWith('week')) return value;
+    if (unit.startsWith('day')) return Math.ceil(value / 7);
+    
+    return 12;
+  }
+
+  /**
+   * Map AI resource type to our ResourceType enum
+   */
+  private static mapAIResourceType(type: string): ResourceType {
+    const lowerType = type?.toLowerCase() || '';
+    if (lowerType.includes('course')) return ResourceType.COURSE;
+    if (lowerType.includes('book')) return ResourceType.BOOK;
+    if (lowerType.includes('video')) return ResourceType.VIDEO;
+    if (lowerType.includes('tutorial')) return ResourceType.TUTORIAL;
+    if (lowerType.includes('article')) return ResourceType.ARTICLE;
+    if (lowerType.includes('documentation')) return ResourceType.DOCUMENTATION;
+    return ResourceType.ARTICLE;
   }
 }

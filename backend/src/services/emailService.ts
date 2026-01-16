@@ -65,7 +65,8 @@ class EmailService {
 
     logger.info('Email verification sent', {
       email,
-      firstName
+      firstName,
+      verificationUrl // Log the URL for development
     });
   }
 

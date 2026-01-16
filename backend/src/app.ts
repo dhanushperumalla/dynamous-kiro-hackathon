@@ -15,9 +15,20 @@ import recommendationRoutes from '@/routes/recommendationRoutes';
 import learningRoutes from '@/routes/learningRoutes';
 import progressRoutes from '@/routes/progressRoutes';
 import deviceRoutes from '@/routes/deviceRoutes';
+import jobRoutes from '@/routes/jobRoutes';
+import gatewayRoutes from '@/routes/gateway';
+import { initializeServices } from '@/config/serviceRegistry';
+import { 
+  attachServiceOrchestrator, 
+  handleServiceErrors,
+  trackServiceMetrics 
+} from '@/middleware/serviceIntegration';
 
 // Create Express application
 const app = express();
+
+// Initialize service registry
+initializeServices();
 
 // Trust proxy for accurate IP addresses (important for rate limiting)
 app.set('trust proxy', 1);
@@ -113,6 +124,10 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Request logging
 app.use(morgan('combined', { stream: morganStream }));
 
+// Service integration middleware
+app.use(attachServiceOrchestrator);
+app.use(trackServiceMetrics);
+
 // Request ID middleware for tracing
 app.use((req, res, next) => {
   req.headers['x-request-id'] = req.headers['x-request-id'] || 
@@ -133,6 +148,7 @@ app.get('/health', (_req, res) => {
 });
 
 // API routes
+app.use('/api/gateway', gatewayRoutes);
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/assessment', assessmentRoutes);
@@ -140,6 +156,7 @@ app.use('/api/recommendations', recommendationRoutes);
 app.use('/api/learning', learningRoutes);
 app.use('/api/progress', progressRoutes);
 app.use('/api/devices', deviceRoutes);
+app.use('/api/jobs', jobRoutes);
 
 // API documentation endpoint
 app.get('/api', (_req, res) => {
@@ -149,13 +166,15 @@ app.get('/api', (_req, res) => {
     version: '1.0.0',
     documentation: '/api/docs',
     endpoints: {
+      gateway: '/api/gateway',
       auth: '/api/auth',
       user: '/api/user',
       assessment: '/api/assessment',
       recommendations: '/api/recommendations',
       learning: '/api/learning',
       progress: '/api/progress',
-      devices: '/api/devices'
+      devices: '/api/devices',
+      jobs: '/api/jobs'
     },
     timestamp: new Date().toISOString()
   });
@@ -173,6 +192,9 @@ app.use('/api/*', (req, res) => {
     }
   });
 });
+
+// Service error handler (must come before global error handler)
+app.use(handleServiceErrors);
 
 // Global error handler
 app.use((error: any, req: express.Request, res: express.Response, _next: express.NextFunction) => {

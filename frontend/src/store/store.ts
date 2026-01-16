@@ -17,7 +17,7 @@ const persistConfig = {
     if (state && state.assessment) {
       delete state.assessment;
     }
-    return state;
+    return Promise.resolve(state);
   },
 };
 

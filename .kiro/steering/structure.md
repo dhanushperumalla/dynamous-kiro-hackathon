@@ -27,21 +27,10 @@ AI-Sikshak/
 │   │   └── types/           # TypeScript interfaces and types
 │   ├── tests/               # API tests and test utilities
 │   └── package.json
-├── mobile/                  # React Native application
-│   ├── src/
-│   │   ├── components/      # Mobile-specific components
-│   │   ├── screens/         # Screen components
-│   │   ├── navigation/      # Navigation configuration
-│   │   ├── services/        # API integration
-│   │   ├── store/           # State management
-│   │   └── utils/           # Mobile utilities
-│   ├── android/             # Android-specific files
-│   ├── ios/                 # iOS-specific files
-│   └── package.json
 ├── shared/                  # Shared utilities and types
 │   ├── types/               # Common TypeScript definitions
 │   ├── constants/           # Shared constants and enums
-│   └── utils/               # Cross-platform utilities
+│   └── utils/               # Shared utilities
 ├── docs/                    # Project documentation
 │   ├── api/                 # API documentation
 │   ├── deployment/          # Deployment guides
@@ -104,11 +93,6 @@ AI-Sikshak/
 - `jest.config.js` - Testing setup
 - `swagger.json` - API documentation
 
-**Mobile:**
-- `metro.config.js` - React Native bundler configuration
-- `babel.config.js` - JavaScript transpilation
-- `react-native.config.js` - Native module configuration
-
 ## Documentation Structure
 ```
 docs/
@@ -136,14 +120,6 @@ src/assets/
     └── themes/             # Light/dark theme definitions
 ```
 
-**Mobile Assets:**
-```
-src/assets/
-├── images/                 # Optimized mobile images
-├── icons/                  # Platform-specific icons
-└── animations/             # Lottie animations for engagement
-```
-
 ## Build Artifacts
 **Frontend Build:**
 - `frontend/dist/` - Production web build
@@ -152,10 +128,6 @@ src/assets/
 **Backend Build:**
 - `backend/dist/` - Compiled TypeScript output
 - `backend/logs/` - Application logs
-
-**Mobile Build:**
-- `mobile/android/app/build/` - Android APK/AAB files
-- `mobile/ios/build/` - iOS build artifacts
 
 ## Environment-Specific Files
 **Development:**

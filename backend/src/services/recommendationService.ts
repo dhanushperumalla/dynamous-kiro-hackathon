@@ -1,5 +1,6 @@
-import { CareerDomainService } from '@/services/careerDomainService';
+ import { CareerDomainService } from '@/services/careerDomainService';
 import { Recommendation } from '@/models/Recommendation';
+import { geminiService } from '@/services/geminiService';
 import {
   IRecommendationDocument,
   IRecommendedDomain,
@@ -45,6 +46,29 @@ export class RecommendationService {
         throw new Error('No active career domains found');
       }
 
+      // Try to enhance with Gemini AI if available
+      let aiEnhancedRecommendations: any = null;
+      if (geminiService.isAvailable()) {
+        try {
+          logger.info('Enhancing recommendations with Gemini AI', { userId });
+          aiEnhancedRecommendations = await geminiService.generateCareerRecommendations({
+            dimensions: interestProfile.dimensions,
+            topInterests: interestProfile.topDimensions.map(d => d.toString()),
+            skills: interestProfile.topDimensions.map(d => d.toString()),
+            experience: 'beginner'
+          });
+          logger.info('Gemini AI recommendations generated', {
+            userId,
+            aiRecommendationCount: aiEnhancedRecommendations.recommendations?.length || 0
+          });
+        } catch (error) {
+          logger.warn('Gemini AI enhancement failed, using traditional algorithm', {
+            userId,
+            error: error instanceof Error ? error.message : 'Unknown error'
+          });
+        }
+      }
+
       // Generate recommendations based on selected algorithm
       let recommendedDomains: IRecommendedDomain[];
       let overallConfidence: number;
@@ -73,6 +97,20 @@ export class RecommendationService {
           break;
       }
 
+      // Enhance recommendations with AI insights if available
+      if (aiEnhancedRecommendations?.recommendations) {
+        recommendedDomains = this.mergeAIRecommendations(
+          recommendedDomains,
+          aiEnhancedRecommendations.recommendations,
+          allDomains
+        );
+        
+        // Add AI analysis to reasoning
+        if (aiEnhancedRecommendations.analysis) {
+          reasoning.unshift(`AI Analysis: ${aiEnhancedRecommendations.analysis}`);
+        }
+      }
+
       // Create and save recommendation document
       const recommendation = new Recommendation({
         userId,
@@ -91,7 +129,8 @@ export class RecommendationService {
         recommendationId: recommendation._id,
         algorithm,
         domainCount: recommendedDomains.length,
-        confidence: overallConfidence
+        confidence: overallConfidence,
+        aiEnhanced: !!aiEnhancedRecommendations
       });
 
       return recommendation;
@@ -778,6 +817,57 @@ export class RecommendationService {
       });
       throw error;
     }
+  }
+
+  /**
+   * Merge AI recommendations with traditional algorithm recommendations
+   */
+  private static mergeAIRecommendations(
+    traditionalRecs: IRecommendedDomain[],
+    aiRecs: Array<{
+      domain: string;
+      matchScore: number;
+      reasoning: string[];
+      keySkills: string[];
+      careerPaths: string[];
+    }>,
+    allDomains: ICareerDomainDocument[]
+  ): IRecommendedDomain[] {
+    // Create a map of domain names to domain documents
+    const domainMap = new Map<string, ICareerDomainDocument>();
+    allDomains.forEach(domain => {
+      domainMap.set(domain.title.toLowerCase(), domain);
+    });
+
+    // Boost scores for domains recommended by AI
+    const aiDomainNames = new Set(aiRecs.map(r => r.domain.toLowerCase()));
+    
+    const enhancedRecs = traditionalRecs.map(rec => {
+      const domain = allDomains.find(d => d._id.toString() === rec.domainId);
+      if (domain && aiDomainNames.has(domain.title.toLowerCase())) {
+        const aiRec = aiRecs.find(r => r.domain.toLowerCase() === domain.title.toLowerCase());
+        if (aiRec) {
+          // Boost match score by averaging with AI score
+          const boostedScore = (rec.matchScore + aiRec.matchScore) / 2;
+          
+          // Add AI reasoning
+          const enhancedReasoning = [
+            ...rec.reasoning,
+            ...aiRec.reasoning.map(r => `AI Insight: ${r}`)
+          ];
+          
+          return {
+            ...rec,
+            matchScore: Math.min(100, boostedScore),
+            reasoning: enhancedReasoning.slice(0, 5) // Keep top 5 reasons
+          };
+        }
+      }
+      return rec;
+    });
+
+    // Sort by match score
+    return enhancedRecs.sort((a, b) => b.matchScore - a.matchScore);
   }
 
   /**

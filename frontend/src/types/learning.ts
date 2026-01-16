@@ -3,15 +3,27 @@ export interface LearningModule {
   id: string;
   title: string;
   description: string;
-  type: 'video' | 'article' | 'exercise' | 'project' | 'quiz' | 'external';
-  duration: number; // in minutes
-  difficulty: 'beginner' | 'intermediate' | 'advanced';
-  prerequisites: string[];
-  resources: LearningResource[];
-  isCompleted: boolean;
-  completedAt?: string;
-  progress: number; // 0-100
+  type?: 'video' | 'article' | 'exercise' | 'project' | 'quiz' | 'external';
   order: number;
+  prerequisites: string[];
+  estimatedHours: number;
+  duration?: number; // in minutes (for compatibility)
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  weeklyTargets: WeeklyTarget[];
+  resources: LearningResource[];
+  skills: string[];
+  assessments?: any[];
+  isOptional: boolean;
+  completionCriteria?: {
+    requiredTasks: number;
+    requiredHours: number;
+    requiredAssessments: any[];
+    requiredSkillLevel: number;
+    customCriteria?: string[];
+  };
+  isCompleted?: boolean;
+  completedAt?: string;
+  progress?: number; // 0-100
 }
 
 export interface LearningResource {
@@ -28,16 +40,37 @@ export interface LearningResource {
 
 export interface WeeklyTarget {
   id: string;
-  weekNumber: number;
+  moduleId?: string;
+  week?: number;
+  weekNumber?: number; // For compatibility
   title: string;
   description: string;
-  modules: string[]; // Module IDs
+  tasks?: Array<{
+    id: string;
+    title: string;
+    description: string;
+    type: string;
+    estimatedMinutes?: number;
+    isRequired: boolean;
+    completed: boolean;
+    completedAt?: Date;
+    notes?: string;
+    resources: string[];
+  }>;
+  modules?: string[]; // Module IDs (for compatibility)
   estimatedHours: number;
-  deadline: string;
-  isCompleted: boolean;
-  completedAt?: string;
-  progress: number; // 0-100
-  milestones: Milestone[];
+  dueDate?: string;
+  deadline?: string; // For compatibility
+  priority?: string;
+  skills?: string[];
+  resources?: string[];
+  completed: boolean;
+  isCompleted?: boolean; // For compatibility
+  completedAt?: string | Date;
+  completionNotes?: string;
+  actualHours?: number;
+  progress?: number; // 0-100
+  milestones?: Milestone[];
 }
 
 export interface Milestone {
@@ -54,15 +87,38 @@ export interface LearningRoadmap {
   id: string;
   userId: string;
   domainId: string;
-  domainName: string;
+  domain?: {
+    _id: string;
+    title: string;
+    description: string;
+    category: string;
+    difficulty: string;
+  };
+  domainName?: string;
   title: string;
   description: string;
-  totalDuration: number; // in weeks
+  totalDuration?: number; // in weeks
+  estimatedDuration?: number; // in weeks (backend field name)
   difficulty: 'beginner' | 'intermediate' | 'advanced';
-  weeklyTargets: WeeklyTarget[];
-  totalModules: number;
-  completedModules: number;
-  progress: number; // 0-100
+  modules?: LearningModule[]; // Added modules array
+  weeklyTargets?: WeeklyTarget[];
+  totalModules?: number;
+  completedModules?: number;
+  progress?: {
+    completedModules: string[];
+    currentModule: string;
+    overallProgress: number;
+    weeklyTargetsMet: number;
+    totalWeeklyTargets: number;
+    totalHoursSpent: number;
+    averageWeeklyHours: number;
+    streakWeeks: number;
+    lastActivityDate: Date;
+    milestones: any[];
+    skillsAcquired: string[];
+    certificationsEarned: string[];
+  };
+  personalization?: any;
   startedAt?: string;
   estimatedCompletionDate?: string;
   actualCompletionDate?: string;

@@ -13,29 +13,38 @@ class LearningService {
   /**
    * Get user's learning roadmap
    */
-  async getRoadmap(roadmapId?: string): Promise<LearningRoadmap> {
-    const url = roadmapId ? `/learning/roadmap/${roadmapId}` : '/learning/roadmap';
-    const response = await apiClient.get(url);
-    return response.data.data.roadmap;
+  async getRoadmap(roadmapId?: string, includeModules: boolean = true, includeProgress: boolean = true): Promise<LearningRoadmap> {
+    if (roadmapId) {
+      const params = new URLSearchParams();
+      params.append('includeModules', includeModules.toString());
+      params.append('includeProgress', includeProgress.toString());
+      const url = `/learning/paths/${roadmapId}?${params.toString()}`;
+      const response = await apiClient.get(url);
+      return response.data.data.learningPath || response.data.data.roadmap;
+    } else {
+      const response = await apiClient.get('/learning/paths');
+      const paths = response.data.data.learningPaths || response.data.data.roadmaps;
+      return paths[0]; // Return first path if no ID specified
+    }
   }
 
   /**
    * Get all user's roadmaps
    */
   async getAllRoadmaps(): Promise<LearningRoadmap[]> {
-    const response = await apiClient.get('/learning/roadmaps');
-    return response.data.data.roadmaps;
+    const response = await apiClient.get('/learning/paths');
+    return response.data.data.learningPaths || response.data.data.roadmaps;
   }
 
   /**
    * Start a new learning roadmap for selected domain
    */
   async startRoadmap(domainId: string, preferences?: Partial<LearningPreferences>): Promise<LearningRoadmap> {
-    const response = await apiClient.post('/learning/roadmap/start', {
+    const response = await apiClient.post('/learning/paths/generate', {
       domainId,
-      preferences,
+      personalization: preferences,
     });
-    return response.data.data.roadmap;
+    return response.data.data.learningPath || response.data.data.path;
   }
 
   /**
@@ -51,7 +60,7 @@ class LearningService {
    * Get current week's targets
    */
   async getCurrentWeekTargets(roadmapId: string): Promise<WeeklyTarget> {
-    const response = await apiClient.get(`/learning/roadmap/${roadmapId}/current-week`);
+    const response = await apiClient.get(`/learning/paths/${roadmapId}/current-week`);
     return response.data.data.weeklyTarget;
   }
 
@@ -59,7 +68,7 @@ class LearningService {
    * Get specific week's targets
    */
   async getWeekTargets(roadmapId: string, weekNumber: number): Promise<WeeklyTarget> {
-    const response = await apiClient.get(`/learning/roadmap/${roadmapId}/week/${weekNumber}`);
+    const response = await apiClient.get(`/learning/paths/${roadmapId}/week/${weekNumber}`);
     return response.data.data.weeklyTarget;
   }
 
@@ -71,7 +80,7 @@ class LearningService {
     progress: LearningProgress;
     message: string;
   }> {
-    const response = await apiClient.post(`/learning/roadmap/${roadmapId}/module/${moduleId}/complete`, {
+    const response = await apiClient.post(`/learning/paths/${roadmapId}/modules/${moduleId}/complete`, {
       notes,
       completedAt: new Date().toISOString(),
     });
@@ -85,9 +94,41 @@ class LearningService {
     success: boolean;
     message: string;
   }> {
-    const response = await apiClient.put(`/learning/roadmap/${roadmapId}/module/${moduleId}/progress`, {
+    const response = await apiClient.put(`/learning/paths/${roadmapId}/modules/${moduleId}/progress`, {
       progress: Math.max(0, Math.min(100, progress)),
     });
+    return response.data;
+  }
+
+  /**
+   * Update weekly target completion status
+   */
+  async updateWeeklyTarget(
+    roadmapId: string,
+    moduleId: string,
+    targetId: string,
+    updates: {
+      completed?: boolean;
+      hoursSpent?: number;
+      notes?: string;
+      taskUpdates?: Array<{
+        taskId: string;
+        completed: boolean;
+        notes?: string;
+      }>;
+    }
+  ): Promise<{
+    success: boolean;
+    data: {
+      weeklyTarget: any;
+      progress: any;
+    };
+    message: string;
+  }> {
+    const response = await apiClient.put(
+      `/learning/paths/${roadmapId}/modules/${moduleId}/targets/${targetId}`,
+      updates
+    );
     return response.data;
   }
 
@@ -151,7 +192,7 @@ class LearningService {
     const params = new URLSearchParams();
     if (weeks) params.append('weeks', weeks.toString());
 
-    const response = await apiClient.get(`/learning/roadmap/${roadmapId}/stats?${params.toString()}`);
+    const response = await apiClient.get(`/learning/paths/${roadmapId}/stats?${params.toString()}`);
     return response.data.data.stats;
   }
 
@@ -180,7 +221,7 @@ class LearningService {
     success: boolean;
     message: string;
   }> {
-    const response = await apiClient.put(`/learning/roadmap/${roadmapId}/status`, {
+    const response = await apiClient.put(`/learning/paths/${roadmapId}/status`, {
       isActive,
     });
     return response.data;
@@ -190,7 +231,7 @@ class LearningService {
    * Get module details
    */
   async getModuleDetails(roadmapId: string, moduleId: string): Promise<LearningModule> {
-    const response = await apiClient.get(`/learning/roadmap/${roadmapId}/module/${moduleId}`);
+    const response = await apiClient.get(`/learning/paths/${roadmapId}/modules/${moduleId}`);
     return response.data.data.module;
   }
 
@@ -227,7 +268,7 @@ class LearningService {
     recommendations: string[];
     estimatedTimeToComplete: number;
   }> {
-    const response = await apiClient.get(`/learning/roadmap/${roadmapId}/recommendations`);
+    const response = await apiClient.get(`/learning/paths/${roadmapId}/recommendations`);
     return response.data.data;
   }
 }

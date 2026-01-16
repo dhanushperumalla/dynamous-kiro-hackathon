@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Assessment, assessmentService } from '@/services/assessmentService';
 import { DomainRecommendations } from '@/components/DomainRecommendations';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { generateRecommendations } from '@/store/slices/recommendationSlice';
 import { RecommendedDomain } from '@/types/recommendations';
 import { useAuth } from '@/hooks/useAuth';
+import { learningService } from '@/services/learningService';
 import toast from 'react-hot-toast';
 
 interface AssessmentResultsProps {
@@ -19,10 +21,12 @@ export const AssessmentResults: React.FC<AssessmentResultsProps> = ({
   onBack
 }) => {
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { currentRecommendation, isLoading: recommendationsLoading } = useAppSelector(state => state.recommendations);
   const [showRecommendations, setShowRecommendations] = useState(false);
   const [recommendationsGenerated, setRecommendationsGenerated] = useState(false);
+  const [isCreatingRoadmap, setIsCreatingRoadmap] = useState(false);
 
   // Debug logging
   useEffect(() => {
@@ -64,11 +68,40 @@ export const AssessmentResults: React.FC<AssessmentResultsProps> = ({
     }
   };
 
-  const handleDomainSelected = (domain: RecommendedDomain) => {
-    toast.success(`Great choice! ${domain.domain.title} selected.`);
-    // Here you would typically navigate to the learning roadmap
-    // For now, we'll show a message
-    toast('Learning roadmap feature is coming soon!', { icon: 'ℹ️' });
+  const handleDomainSelected = async (domain: RecommendedDomain) => {
+    if (isCreatingRoadmap) return;
+    
+    setIsCreatingRoadmap(true);
+    try {
+      toast.loading('Creating your personalized learning roadmap...', { id: 'creating-roadmap' });
+      
+      // Start a new learning roadmap for the selected domain
+      const roadmap = await learningService.startRoadmap(domain.domainId);
+      
+      toast.success(`Great choice! ${domain.domain.title} learning path created.`, { id: 'creating-roadmap' });
+      
+      // Navigate to the learning path page
+      navigate(`/learning/${roadmap.id}`);
+    } catch (error: any) {
+      console.error('Error creating learning roadmap:', error);
+      
+      // Check if learning path already exists
+      if (error.response?.status === 409 && error.response?.data?.error?.code === 'LEARNING_PATH_EXISTS') {
+        const existingPathId = error.response?.data?.error?.details?.existingPathId;
+        if (existingPathId) {
+          toast.success('Opening your existing learning path...', { id: 'creating-roadmap' });
+          navigate(`/learning/${existingPathId}`);
+          return;
+        }
+      }
+      
+      toast.error(
+        error.response?.data?.error?.message || 'Failed to create learning roadmap. Please try again.',
+        { id: 'creating-roadmap' }
+      );
+    } finally {
+      setIsCreatingRoadmap(false);
+    }
   };
 
   // Show recommendations view if user clicked to view them

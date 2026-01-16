@@ -32,9 +32,10 @@ export const DomainRecommendations: React.FC<DomainRecommendationsProps> = ({
         await dispatch(addRecommendationFeedback({
           recommendationId: currentRecommendation.id,
           feedback: {
+            recommendationId: currentRecommendation.id,
             domainId: domain.domainId,
             rating: 5,
-            feedback: 'helpful',
+            feedback: 'very_relevant',
             comments: `Selected ${domain.domain.title} based on ${domain.matchScore}% match`,
             selectedDomain: domain.domainId
           }
@@ -410,9 +411,10 @@ export const DomainRecommendations: React.FC<DomainRecommendationsProps> = ({
               e.preventDefault();
               const formData = new FormData(e.currentTarget);
               const feedback: DomainSelection = {
+                recommendationId: currentRecommendation?.id,
                 domainId: showFeedbackModal.domainId,
                 rating: parseInt(formData.get('rating') as string),
-                feedback: formData.get('feedback') as 'helpful' | 'not_helpful' | 'partially_helpful',
+                feedback: formData.get('feedback') as 'very_relevant' | 'relevant' | 'somewhat_relevant' | 'not_relevant' | 'already_pursuing' | 'not_interested',
                 comments: formData.get('comments') as string || undefined,
               };
               submitFeedback(feedback);
@@ -434,13 +436,16 @@ export const DomainRecommendations: React.FC<DomainRecommendationsProps> = ({
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Was this recommendation helpful?
+                    How relevant is this recommendation?
                   </label>
                   <select name="feedback" required className="w-full border border-gray-300 rounded-lg px-3 py-2">
                     <option value="">Select option</option>
-                    <option value="helpful">Yes, very helpful</option>
-                    <option value="partially_helpful">Somewhat helpful</option>
-                    <option value="not_helpful">Not helpful</option>
+                    <option value="very_relevant">Very Relevant</option>
+                    <option value="relevant">Relevant</option>
+                    <option value="somewhat_relevant">Somewhat Relevant</option>
+                    <option value="not_relevant">Not Relevant</option>
+                    <option value="already_pursuing">Already Pursuing</option>
+                    <option value="not_interested">Not Interested</option>
                   </select>
                 </div>
                 

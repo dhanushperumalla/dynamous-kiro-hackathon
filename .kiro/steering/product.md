@@ -24,7 +24,7 @@ AI-Sikshak is an AI-powered career mentorship platform that helps confused stude
 - **Progress Notifications**: Automated reminders and motivational messages
 - **Job Integration**: Direct links to relevant job postings upon course completion
 - **Progress Tracking**: Visual dashboards showing learning journey and achievements
-- **Multi-platform Access**: Available on both web and mobile for flexible learning
+- **Responsive Web Access**: Available on desktop and mobile browsers for flexible learning
 
 ## Business Objectives
 - **Student Success**: Help 10,000+ students find clear career direction within first year

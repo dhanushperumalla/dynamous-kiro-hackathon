@@ -59,6 +59,18 @@ router.post(
 );
 
 /**
+ * @route   POST /api/recommendations/:recommendationId/feedback
+ * @desc    Submit feedback for a specific recommendation (alternative endpoint)
+ * @access  Private (requires authentication)
+ */
+router.post(
+  '/:recommendationId/feedback',
+  authenticateToken({ required: true }),
+  validateBody(recommendationValidationSchemas.submitFeedback),
+  recommendationController.submitFeedback
+);
+
+/**
  * @route   GET /api/recommendations/statistics
  * @desc    Get recommendation statistics (for analytics/admin)
  * @access  Private (requires authentication)

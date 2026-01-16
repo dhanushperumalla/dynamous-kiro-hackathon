@@ -99,8 +99,11 @@ export const generateLearningPath = async (req: AuthenticatedRequest, res: Respo
     // Generate learning path
     const learningPathData = await LearningPathGenerationService.generateLearningPath(createRequest);
 
+    // Remove the empty id field before saving (Mongoose will generate it)
+    const { id, ...pathDataWithoutId } = learningPathData;
+
     // Save to database
-    const learningPath = new LearningPath(learningPathData);
+    const learningPath = new LearningPath(pathDataWithoutId);
     await learningPath.save();
 
     logger.info('Learning path generated successfully', {

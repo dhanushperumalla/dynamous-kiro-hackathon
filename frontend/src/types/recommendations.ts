@@ -80,9 +80,10 @@ export interface DomainRecommendation {
 }
 
 export interface DomainSelection {
+  recommendationId?: string; // Added to match backend requirement
   domainId: string;
   rating: number; // 1-5
-  feedback: 'helpful' | 'not_helpful' | 'partially_helpful';
+  feedback: 'very_relevant' | 'relevant' | 'somewhat_relevant' | 'not_relevant' | 'already_pursuing' | 'not_interested';
   comments?: string;
   selectedDomain?: string;
   rejectionReason?: string;

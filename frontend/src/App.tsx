@@ -7,6 +7,10 @@ import { store, persistor } from '@/store/store';
 import { Login } from '@/pages/Login';
 import { Signup } from '@/pages/Signup';
 import { Dashboard } from '@/pages/Dashboard';
+import { LearningPath } from '@/pages/LearningPath';
+import { ProgressDashboard } from '@/pages/ProgressDashboard';
+import { JobMatching } from '@/pages/JobMatching';
+import { JobApplications } from '@/pages/JobApplications';
 import { useAuth } from '@/hooks/useAuth';
 
 // Protected Route Component
@@ -61,6 +65,42 @@ const AppRoutes: React.FC = () => {
         element={
           <ProtectedRoute>
             <Dashboard />
+          </ProtectedRoute>
+        }
+      />
+      
+      <Route
+        path="/learning/:roadmapId"
+        element={
+          <ProtectedRoute>
+            <LearningPath />
+          </ProtectedRoute>
+        }
+      />
+      
+      <Route
+        path="/progress"
+        element={
+          <ProtectedRoute>
+            <ProgressDashboard />
+          </ProtectedRoute>
+        }
+      />
+      
+      <Route
+        path="/jobs"
+        element={
+          <ProtectedRoute>
+            <JobMatching />
+          </ProtectedRoute>
+        }
+      />
+      
+      <Route
+        path="/applications"
+        element={
+          <ProtectedRoute>
+            <JobApplications />
           </ProtectedRoute>
         }
       />

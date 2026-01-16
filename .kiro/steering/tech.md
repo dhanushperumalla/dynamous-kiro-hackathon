@@ -3,7 +3,6 @@
 ## Technology Stack
 **Frontend:**
 - React.js with TypeScript for web application
-- React Native for mobile applications (iOS/Android)
 - Redux Toolkit for state management
 - Material-UI or Tailwind CSS for styling
 - React Router for navigation
@@ -25,7 +24,7 @@
 - MongoDB Atlas for cloud database
 - Redis for caching and session management
 - SendGrid/Nodemailer for email notifications
-- Push notification services (FCM/APNS)
+- Browser push notifications for web
 
 ## Architecture Overview
 **Microservices Architecture:**
@@ -46,14 +45,12 @@
 - Node.js (v18+) and npm/yarn
 - MongoDB (local or Atlas)
 - React Developer Tools
-- React Native CLI and Android Studio/Xcode
 - Postman for API testing
 - Git for version control
 
 **Development Setup:**
 - Frontend: Create React App with TypeScript template
 - Backend: Express.js with TypeScript configuration
-- Mobile: React Native with Expo for rapid development
 - Database: MongoDB with sample data seeding scripts
 
 ## Code Standards
@@ -88,11 +85,6 @@
 - MongoDB Memory Server for test database
 - 85%+ code coverage target
 
-**Mobile Testing:**
-- React Native Testing Library
-- Detox for end-to-end mobile testing
-- Device testing on iOS and Android
-
 ## Deployment Process
 **CI/CD Pipeline:**
 - GitHub Actions for automated testing and deployment
@@ -110,13 +102,7 @@
 - Page load times under 3 seconds
 - Interactive elements respond within 100ms
 - Support for 10,000+ concurrent users
-- Mobile-responsive design with 90+ Lighthouse scores
-
-**Mobile Application:**
-- App startup time under 2 seconds
-- Smooth 60fps animations and transitions
-- Offline capability for core features
-- Battery-efficient background processing
+- Responsive design with 90+ Lighthouse scores
 
 **Backend Performance:**
 - API response times under 200ms

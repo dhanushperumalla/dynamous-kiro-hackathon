@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useAssessment } from '@/hooks/useAssessment';
 import { AssessmentCard } from '@/components/AssessmentCard';
@@ -9,6 +10,7 @@ import toast from 'react-hot-toast';
 type DashboardView = 'overview' | 'questionnaire' | 'results';
 
 export const Dashboard: React.FC = () => {
+  const navigate = useNavigate();
   const { user, logout } = useAuth();
   const { 
     currentAssessment, 
@@ -217,9 +219,30 @@ export const Dashboard: React.FC = () => {
                 </p>
                 <button
                   disabled={!currentAssessment?.isComplete}
+                  onClick={() => {
+                    if (currentAssessment?.isComplete) {
+                      // Navigate to learning paths - for now show a message
+                      toast('Select a domain from your recommendations to start a learning roadmap!', { icon: '📚' });
+                    }
+                  }}
                   className="text-blue-600 hover:text-blue-500 font-medium text-sm disabled:text-gray-400 disabled:cursor-not-allowed"
                 >
                   {currentAssessment?.isComplete ? 'View Roadmaps' : 'Complete Assessment First'}
+                </button>
+              </div>
+
+              <div className="bg-white rounded-lg shadow-sm border p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  Progress Tracking
+                </h3>
+                <p className="text-gray-600 text-sm mb-4">
+                  Monitor your learning progress and achievements.
+                </p>
+                <button 
+                  onClick={() => navigate('/progress')}
+                  className="text-blue-600 hover:text-blue-500 font-medium text-sm"
+                >
+                  View Progress
                 </button>
               </div>
 
@@ -232,27 +255,14 @@ export const Dashboard: React.FC = () => {
                 </p>
                 <button
                   disabled={!currentAssessment?.isComplete}
+                  onClick={() => {
+                    if (currentAssessment?.isComplete) {
+                      navigate('/jobs');
+                    }
+                  }}
                   className="text-blue-600 hover:text-blue-500 font-medium text-sm disabled:text-gray-400 disabled:cursor-not-allowed"
                 >
                   {currentAssessment?.isComplete ? 'Browse Jobs' : 'Complete Assessment First'}
-                </button>
-              </div>
-
-              <div className="bg-white rounded-lg shadow-sm border p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  Progress Tracking
-                </h3>
-                <p className="text-gray-600 text-sm mb-4">
-                  Monitor your learning progress and achievements.
-                </p>
-                <button 
-                  onClick={() => {
-                    // For now, show a placeholder message since progress tracking isn't fully implemented
-                    toast('Progress tracking feature is coming soon! Complete your assessment first to unlock learning paths.', { icon: 'ℹ️' });
-                  }}
-                  className="text-blue-600 hover:text-blue-500 font-medium text-sm"
-                >
-                  View Progress
                 </button>
               </div>
             </div>
